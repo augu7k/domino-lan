@@ -12,8 +12,9 @@ services:
       - key: NODE_VERSION
         value: 22
 
-  - type: static_site
+  - type: web
     name: domino-lan-web
+    runtime: static
     rootDir: web
     buildCommand: echo "Publishing Domino PWA"
     staticPublishPath: .
