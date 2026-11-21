@@ -27,7 +27,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool _ready = false;
   bool _hostReady = true;
   String? _playerId;
-  int? _seat;
   String _status = 'أنشئ غرفة أو انضم إلى غرفة موجودة.';
 
   bool get _isHost => _hosting;
@@ -52,7 +51,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (!mounted) return;
       setState(() {
         _playerId = id;
-        _seat = seat;
         _status = 'انضممت إلى الغرفة في المقعد ${seat + 1}.';
       });
     };
@@ -127,7 +125,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       _status = 'جارٍ الانضمام إلى الغرفة...';
       _remoteLobby = null;
       _playerId = null;
-      _seat = null;
     });
     try {
       await _client.close();
@@ -158,7 +155,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       _hosting = false;
       _remoteLobby = null;
       _playerId = null;
-      _seat = null;
       _ready = false;
       _hostReady = true;
       _status = 'غادرت الغرفة.';
