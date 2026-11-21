@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/domino_engine.dart';
 import '../domain/domino_lobby.dart';
@@ -25,6 +28,8 @@ class DominoLobbyHost {
   late final LocalWebSocketHost _server;
   LocalDiscoveryHost? _discovery;
   final Map<WebSocket, String> _connectionPlayers = <WebSocket, String>{};
+  final Map<String, String> _resumeTokens = <String, String>{};
+  final Random _random = Random.secure();
   int _nextPlayerNumber = 1;
   bool _started = false;
   DominoGameState? _gameState;
@@ -157,6 +162,43 @@ class DominoLobbyHost {
       _sendError(socket, 'رمز الغرفة غير صحيح.');
       return;
     }
+
+    final suppliedToken = message['resumeToken'];
+    if (suppliedToken is String && suppliedToken.isNotEmpty) {
+      final playerId = _resumeTokens[suppliedToken];
+      final player = playerId == null
+          ? null
+          : lobby.players.where((item) => item.id == playerId).firstOrNull;
+      if (player == null || !lobby.isGameStarted) {
+        _sendError(socket, 'انتهت صلاحية جلسة الاستعادة.');
+        return;
+      }
+      _connectionPlayers[socket] = playerId;
+      _server.sendTo(socket, <String, Object?>{
+        'v': 1,
+        'type': 'joined',
+        'playerId': playerId,
+        'seat': player.seat,
+        'resumeToken': suppliedToken,
+        'resumed': true,
+      });
+      _server.sendTo(socket, <String, Object?>{
+        'v': 1,
+        'type': 'game_state',
+        'state': _lastGameSnapshot,
+      });
+      _server.sendTo(socket, <String, Object?>{
+        'v': 1,
+        'type': 'your_hand',
+        'hand': _tileJson(_gameState!.handForSeat(player.seat)),
+      });
+      return;
+    }
+
+    if (lobby.isGameStarted) {
+      _sendError(socket, 'المباراة بدأت بالفعل. استخدم استعادة الجلسة.');
+      return;
+    }
     final name = message['name'];
     if (name is! String) {
       _sendError(socket, 'أدخل اسماً صحيحاً.');
@@ -177,18 +219,20 @@ class DominoLobbyHost {
       return;
     }
 
-    // The host assigns the seat and player identity; client-supplied IDs
-    // are intentionally ignored.
+    final token = List<int>.generate(32, (_) => _random.nextInt(256))
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
+    _resumeTokens[token] = playerId;
     _connectionPlayers[socket] = playerId;
     _server.sendTo(socket, <String, Object?>{
       'v': 1,
       'type': 'joined',
       'playerId': playerId,
       'seat': result.player!.seat,
+      'resumeToken': token,
     });
     _publish();
   }
-
 
   void _handlePlayTile(WebSocket socket, Map<String, dynamic> message) {
     final playerId = _connectionPlayers[socket];
@@ -298,7 +342,9 @@ class DominoLobbyHost {
 
   void _handleDisconnect(WebSocket socket) {
     final playerId = _connectionPlayers.remove(socket);
-    if (playerId == null || !_started || lobby.isGameStarted) return;
+    if (playerId == null || !_started) return;
+    if (lobby.isGameStarted) return; // Keep the seat and token until match start.
+    _resumeTokens.removeWhere((_, value) => value == playerId);
     lobby.removePlayer(playerId);
     _publish();
   }
@@ -333,6 +379,7 @@ class DominoLobbyHost {
     _discovery = null;
     if (_started) await _server.stop();
     _connectionPlayers.clear();
+    _resumeTokens.clear();
     _started = false;
   }
 }
@@ -349,6 +396,12 @@ class DominoLobbyClient {
   void Function(List<dynamic> players)? onGameStarted;
   void Function(Map<String, dynamic> state)? onGameState;
   void Function(List<DominoTile> hand)? onHand;
+  void Function(String message)? onConnectionStatus;
+
+  String? resumeToken;
+  String? _address;
+  String? _roomCode;
+  String? _playerName;
 
   List<DominoTile> hand = const <DominoTile>[];
   int? seat;
@@ -361,12 +414,21 @@ class DominoLobbyClient {
     required String address,
     required String roomCode,
     required String playerName,
+    String? resumeToken,
   }) async {
+    _address = address;
+    _roomCode = roomCode.trim();
+    _playerName = playerName.trim();
+    final preferences = await SharedPreferences.getInstance();
+    final token = resumeToken ?? this.resumeToken ?? preferences.getString(_resumeKey(roomCode));
     final client = await LocalWebSocketClient.connect(host: address);
     _client = client;
     _subscription = client.messages.listen(
       _handleMessage,
-      onDone: () => onDisconnected?.call(),
+      onDone: () {
+        onConnectionStatus?.call('انقطع الاتصال. يمكنك إعادة الاتصال دون فقد مقعدك.');
+        onDisconnected?.call();
+      },
       onError: (Object error) => onError?.call('انقطع الاتصال: $error'),
     );
     client.send(<String, Object?>{
@@ -374,7 +436,39 @@ class DominoLobbyClient {
       'type': 'join',
       'roomCode': roomCode.trim(),
       'name': playerName.trim(),
+      if (token != null) 'resumeToken': token,
     });
+  }
+
+  String _resumeKey(String roomCode) => 'domino_resume_${roomCode.trim()}';
+
+  Future<void> _persistResumeToken(String token) async {
+    final roomCode = _roomCode;
+    if (roomCode == null) return;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_resumeKey(roomCode), token);
+  }
+
+  Future<void> reconnect() async {
+    final address = _address;
+    final roomCode = _roomCode;
+    final playerName = _playerName;
+    if (address == null || roomCode == null || playerName == null) {
+      onError?.call('بيانات الاتصال غير متاحة. ارجع إلى الغرفة للانضمام مجدداً.');
+      return;
+    }
+    onConnectionStatus?.call('جارٍ إعادة الاتصال...');
+    await close();
+    try {
+      await connect(
+        address: address,
+        roomCode: roomCode,
+        playerName: playerName,
+        resumeToken: resumeToken,
+      );
+    } on Object catch (error) {
+      onError?.call('تعذرت إعادة الاتصال: $error');
+    }
   }
 
   void setReady(bool ready) {
@@ -391,6 +485,10 @@ class DominoLobbyClient {
       if (decoded is! Map<String, dynamic>) return;
       switch (decoded['type']) {
         case 'joined':
+          if (decoded['resumeToken'] is String) {
+            resumeToken = decoded['resumeToken'] as String;
+            _persistResumeToken(resumeToken!);
+          }
           if (decoded['playerId'] is String && decoded['seat'] is int) {
             onJoined?.call(decoded['playerId'] as String, decoded['seat'] as int);
           }
