@@ -251,7 +251,7 @@ test("double-six round contains all 28 unique tiles and deals seven to each play
 test("awards the opposing team's remaining pips when a player empties their hand", () => {
   const room = makeEngineRoom(
     [
-      [{ first: 6, second: 0 }],
+      [{ first: 0, second: 6 }],
       [{ first: 3, second: 4 }],
       [{ first: 1, second: 1 }],
       [{ first: 2, second: 2 }],
@@ -259,7 +259,7 @@ test("awards the opposing team's remaining pips when a player empties their hand
     [{ first: 6, second: 6, leftPip: 6, rightPip: 6 }],
   );
 
-  playTile(room, 0, { first: 6, second: 0 }, "right");
+  playTile(room, 0, { first: 0, second: 6 }, "right");
 
   assert.equal(room.game.isFinished, true);
   assert.deepEqual(room.game.result, {
