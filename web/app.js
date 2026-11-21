@@ -202,8 +202,11 @@ function renderGame() {
         ? "تعادل"
         : "الفريق " + (entry.winningTeam + 1) + " · +" + entry.pointsAwarded;
       const totals = document.createElement("small");
-      totals.textContent = "الفريق الأول: " + entry.teamScores[0] + " — الفريق الثاني: " + entry.teamScores[1];
-      row.append(roundName, outcome, totals);
+      totals.textContent = "المجموع: " + entry.teamScores[0] + " — " + entry.teamScores[1];
+      const remaining = document.createElement("small");
+      remaining.textContent = "المتبقي عند نهاية الجولة: " +
+        (entry.teamRemainingPips?.[0] ?? 0) + " — " + (entry.teamRemainingPips?.[1] ?? 0);
+      row.append(roundName, outcome, totals, remaining);
       history.append(row);
     }
   }
@@ -242,13 +245,45 @@ function renderGame() {
 
   if (game.isFinished && game.result) {
     const result = game.result;
-    $("#roundResult").hidden = false;
-    $("#roundResult").textContent = result.winningTeam === null
-      ? "تعادل بسبب انسداد اللعب. لم تُضف نقاط."
-      : "فاز الفريق " + (result.winningTeam + 1) + " · النقاط المضافة: " + result.pointsAwarded;
+    const resultPanel = $("#roundResult");
+    resultPanel.hidden = false;
+    resultPanel.replaceChildren();
+
+    const title = document.createElement("strong");
+    title.className = "result-title";
+    title.textContent = result.winningTeam === null
+      ? "انتهت الجولة بالتعادل"
+      : "فاز الفريق " + (result.winningTeam + 1);
+    const reason = document.createElement("p");
+    reason.className = "result-reason";
+    reason.textContent = result.reason === "blocked"
+      ? "توقفت اللعبة بعد تمرير اللاعبين الأربعة."
+      : "أنهى أحد اللاعبين أحجاره.";
+    const points = document.createElement("p");
+    points.className = "result-points";
+    points.textContent = result.winningTeam === null
+      ? "لم تُضف نقاط في هذه الجولة."
+      : "النقاط التي أضيفت للفائز: " + result.pointsAwarded;
+
+    const breakdown = document.createElement("div");
+    breakdown.className = "result-breakdown";
+    for (let team = 0; team < 2; team++) {
+      const item = document.createElement("div");
+      item.className = "result-team";
+      const name = document.createElement("strong");
+      name.textContent = "الفريق " + (team + 1);
+      const remaining = document.createElement("span");
+      remaining.textContent = "النقاط المتبقية بأحجاره: " + (result.teamRemainingPips?.[team] ?? 0);
+      const total = document.createElement("small");
+      total.textContent = "مجموعه بعد الجولة: " + game.teamScores[team];
+      item.append(name, remaining, total);
+      breakdown.append(item);
+    }
+    resultPanel.append(title, reason, points, breakdown);
     $("#nextRoundButton").hidden = player?.seat !== 0;
   } else {
     $("#roundResult").hidden = true;
+    $("#roundResult").replaceChildren();
     $("#nextRoundButton").hidden = true;
   }
 }
