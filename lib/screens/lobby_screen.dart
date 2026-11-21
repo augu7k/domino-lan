@@ -6,6 +6,7 @@ import '../domain/domino_lobby.dart';
 import '../network/discovered_host.dart';
 import '../network/domino_lobby_session.dart';
 import '../network/local_discovery.dart';
+import 'game_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
   const LobbyScreen({super.key});
@@ -27,6 +28,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   bool _ready = false;
   bool _hostReady = true;
   String? _playerId;
+  int? _seat;
   String _status = 'أنشئ غرفة أو انضم إلى غرفة موجودة.';
 
   bool get _isHost => _hosting;
@@ -46,12 +48,26 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (!mounted) return;
       setState(() {
         _playerId = id;
+        _seat = seat;
         _status = 'انضممت إلى الغرفة في المقعد ${seat + 1}.';
       });
     };
     _client.onError = _showStatus;
     _client.onDisconnected = () => _showStatus('انقطع الاتصال بالمضيف.');
-    _client.onGameStarted = (_) => _showStatus('بدأ المضيف المباراة.');
+    _client.onGameStarted = (_) => _openGame(_client.seat ?? _seat ?? 0);
+  }
+
+  void _openGame(int seat) {
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DominoGameScreen(
+          seat: seat,
+          host: _hosting ? _activeHost : null,
+          client: _hosting ? null : _client,
+        ),
+      ),
+    );
   }
 
   void _showStatus(String value) {
@@ -69,7 +85,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final host = DominoLobbyHost(hostName: name);
       host.onChanged = () { if (mounted) setState(() {}); };
       host.onError = _showStatus;
-      host.onGameStarted = (_) => _showStatus('بدأت المباراة.');
+      host.onGameStarted = (_) => _openGame(0);
       await host.start();
       if (!mounted) {
         await host.stop();
@@ -120,6 +136,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       _status = 'جارٍ الانضمام إلى الغرفة...';
       _remoteLobby = null;
       _playerId = null;
+      _seat = null;
     });
     try {
       await _client.close();
@@ -150,6 +167,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       _hosting = false;
       _remoteLobby = null;
       _playerId = null;
+      _seat = null;
       _ready = false;
       _hostReady = true;
       _status = 'غادرت الغرفة.';
