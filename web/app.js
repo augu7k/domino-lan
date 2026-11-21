@@ -164,7 +164,6 @@ function createDominoElement(first, second, className, tagName = "span") {
   tile.insertBefore(divider, tile.children[1]);
   return tile;
 }
-function tileLabel(tile) { return tile.first + " | " + tile.second; }
 function canPlayTile(tile) {
   if (!game) return false;
   if (!game.board.length) return tile.first === 6 && tile.second === 6;
@@ -179,10 +178,14 @@ function renderGame() {
   $("#roomPanel").hidden = true;
   $("#gamePanel").hidden = false;
   const current = game.players[game.currentSeat];
+  const isMyTurn = game.currentSeat === player?.seat;
+  const hasLegalMove = yourHand.some(canPlayTile);
   $("#turnLabel").textContent = current ? current.name + (current.id === player?.id ? " (دورك)" : "") : "—";
   $("#score0").textContent = game.teamScores[0];
   $("#score1").textContent = game.teamScores[1];
-  $("#gameMessage").textContent = game.isFinished ? "انتهت الجولة." : current?.id === player?.id ? "اختر حجراً صالحاً للعب." : "انتظر دور اللاعب الآخر.";
+  $("#gameMessage").textContent = game.isFinished ? "انتهت الجولة." : isMyTurn
+    ? hasLegalMove ? "دورك الآن: اختر حجراً مناسباً." : "لا تملك حجراً صالحاً؛ يمكنك تمرير الدور."
+    : "انتظر دور اللاعب الآخر.";
   const board = $("#board");
   board.replaceChildren();
   if (!game.board.length) {
@@ -210,8 +213,6 @@ function renderGame() {
     button.addEventListener("click", () => chooseTile(tile));
     hand.append(button);
   });
-  const isMyTurn = game.currentSeat === player?.seat;
-  const hasLegalMove = yourHand.some(canPlayTile);
   $("#passButton").disabled = game.isFinished || !isMyTurn || hasLegalMove;
   $("#passButton").hidden = game.isFinished || hasLegalMove || !isMyTurn;
 
@@ -239,6 +240,7 @@ function chooseTile(tile) {
     if (tile.first === right || tile.second === right) sides.push("right");
   }
   if (!sides.length) {
+    selectedTile = null;
     showNotice("حجر غير صالح", "هذا الحجر لا يطابق الطرفين المفتوحين.");
     choices.hidden = true;
     renderGame();
