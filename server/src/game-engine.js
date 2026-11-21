@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 
-export function createRound(players, teamScores = [0, 0], roundNumber = 1) {
+export function createRound(players, teamScores = [0, 0], roundNumber = 1, roundHistory = []) {
   if (!Array.isArray(players) || players.length !== 4 ||
       new Set(players.map((p) => p.seat)).size !== 4 ||
       ![0, 1, 2, 3].every((seat) => players.some((p) => p.seat === seat))) {
@@ -13,6 +13,7 @@ export function createRound(players, teamScores = [0, 0], roundNumber = 1) {
   if (!Number.isInteger(roundNumber) || roundNumber < 1) {
     throw new Error("A positive round number is required.");
   }
+  if (!Array.isArray(roundHistory)) throw new Error("Round history must be an array.");
 
   const deck = [];
   for (let first = 0; first <= 6; first++) {
@@ -36,6 +37,7 @@ export function createRound(players, teamScores = [0, 0], roundNumber = 1) {
     consecutivePasses: 0,
     teamScores: [...teamScores],
     roundNumber,
+    roundHistory: roundHistory.map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
     isFinished: false,
     result: null,
   };
@@ -65,6 +67,7 @@ export function publicGameState(room) {
     consecutivePasses: game.consecutivePasses,
     teamScores: [...game.teamScores],
     roundNumber: game.roundNumber,
+    roundHistory: game.roundHistory.map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
     remainingTiles: game.hands.map((hand) => hand.length),
     isFinished: game.isFinished,
     result: game.result ? { ...game.result } : null,
@@ -84,6 +87,13 @@ function finishRound(room, winningTeam, reason) {
   }
   game.isFinished = true;
   game.result = { reason, winningTeam, pointsAwarded, teamRemainingPips: remaining };
+  game.roundHistory.push({
+    roundNumber: game.roundNumber,
+    reason,
+    winningTeam,
+    pointsAwarded,
+    teamScores: [...game.teamScores],
+  });
 }
 
 export function playTile(room, seat, tileInput, side) {
