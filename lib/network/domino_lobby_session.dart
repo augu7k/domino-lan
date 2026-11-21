@@ -89,8 +89,10 @@ class DominoLobbyHost {
             return;
           }
           _publish();
+          return;
         default:
           _sendError(socket, 'طلب غير معروف.');
+          return;
       }
     } on FormatException {
       _sendError(socket, 'تعذر قراءة الرسالة.');
@@ -233,16 +235,20 @@ class DominoLobbyClient {
           if (decoded['playerId'] is String && decoded['seat'] is int) {
             onJoined?.call(decoded['playerId'] as String, decoded['seat'] as int);
           }
+          return;
         case 'lobby_snapshot':
           final lobby = decoded['lobby'];
           if (lobby is Map<String, dynamic>) onLobby?.call(lobby);
+          return;
         case 'error':
           if (decoded['message'] is String) {
             onError?.call(decoded['message'] as String);
           }
+          return;
         case 'game_started':
           final players = decoded['players'];
           if (players is List) onGameStarted?.call(players);
+          return;
       }
     } on FormatException {
       onError?.call('وصلت رسالة غير صالحة من المضيف.');

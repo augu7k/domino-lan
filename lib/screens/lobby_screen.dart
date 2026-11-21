@@ -19,7 +19,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   final _ipController = TextEditingController();
   final _codeController = TextEditingController();
   final _hostNameController = TextEditingController();
-  final _host = DominoLobbyHost(hostName: 'المضيف');
   final _client = DominoLobbyClient();
   final List<DiscoveredHost> _rooms = [];
   Map<String, dynamic>? _remoteLobby;
@@ -35,8 +34,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
   List<dynamic> get _remotePlayers =>
       (_remoteLobby?['players'] as List<dynamic>?) ?? const [];
   List<LobbyPlayer> get _hostPlayers =>
-      _hosting ? _host.lobby.players : const [];
-  bool get _hostCanStart => _hosting && _host.lobby.canStart;
+      _hosting ? (_activeHost?.lobby.players ?? const []) : const [];
+  bool get _hostCanStart => _hosting && (_activeHost?.lobby.canStart ?? false);
 
   @override
   void initState() {
@@ -74,7 +73,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
     try {
       // Recreate the host service with the name chosen in the form.
-      await _host.stop();
       final host = DominoLobbyHost(hostName: name);
       host.onChanged = () { if (mounted) setState(() {}); };
       host.onError = _showStatus;
