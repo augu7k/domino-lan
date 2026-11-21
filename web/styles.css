@@ -73,3 +73,16 @@ input:focus{border-color:var(--felt);box-shadow:0 0 0 3px #174e3a16}
 .history-row span{text-align:left;font-weight:bold}
 .history-row small{grid-column:1/-1;color:var(--muted);font-size:10px}
 .history-empty{margin:0;color:var(--muted);font-size:11px}
+
+.round-result{display:grid;gap:9px;text-align:right}
+.result-title{font-size:16px;text-align:center}
+.result-reason,.result-points{margin:0;text-align:center;line-height:1.7}
+.result-reason{font-size:11px;font-weight:normal;color:var(--muted)}
+.result-points{font-size:13px}
+.result-breakdown{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:3px}
+.result-team{display:flex;flex-direction:column;gap:6px;padding:11px;background:#fff;border:1px solid var(--line);border-radius:10px}
+.result-team strong{font-size:12px;color:var(--felt)}
+.result-team span{font-size:11px}
+.result-team small{font-size:10px;color:var(--muted)}
+.history-row small+small{margin-top:-2px}
+@media(max-width:360px){.result-breakdown{grid-template-columns:1fr}}
