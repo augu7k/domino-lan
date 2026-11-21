@@ -93,6 +93,7 @@ class DominoLobbyHost {
           'v': 1,
           'type': 'game_started',
           'seat': player.seat,
+          'players': players.map(_playerJson).toList(growable: false),
           'hand': _tileJson(_gameState!.handForSeat(player.seat)),
         });
       }
@@ -347,6 +348,8 @@ class DominoLobbyClient {
   void Function(List<DominoTile> hand)? onHand;
 
   List<DominoTile> hand = const <DominoTile>[];
+  int? seat;
+  Map<String, dynamic>? lastGameState;
   void Function()? onDisconnected;
 
   bool get isConnected => _client?.isConnected == true;
@@ -399,6 +402,7 @@ class DominoLobbyClient {
           }
           return;
         case 'game_started':
+          seat = decoded['seat'] as int?;
           final rawHand = decoded['hand'];
           if (rawHand is List) {
             hand = _parseHand(rawHand);
@@ -409,7 +413,10 @@ class DominoLobbyClient {
           return;
         case 'game_state':
           final state = decoded['state'];
-          if (state is Map<String, dynamic>) onGameState?.call(state);
+          if (state is Map<String, dynamic>) {
+            lastGameState = state;
+            onGameState?.call(state);
+          }
           return;
         case 'your_hand':
           final rawHand = decoded['hand'];
