@@ -135,6 +135,35 @@ function renderRoom() {
   $("#startButton").disabled = !isHost || room.players.some((entry) => !entry || !entry.isReady);
   if (room.gameStarted) $("#roomPanel").hidden = true;
 }
+const pipPatterns = {
+  0: [],
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8]
+};
+function createDominoElement(first, second, className, tagName = "span") {
+  const tile = document.createElement(tagName);
+  tile.className = className;
+  tile.setAttribute("aria-label", first + " على " + second);
+  for (const value of [first, second]) {
+    const half = document.createElement("span");
+    half.className = "domino-half";
+    const active = new Set(pipPatterns[value] || []);
+    for (let position = 0; position < 9; position++) {
+      const pip = document.createElement("span");
+      pip.className = active.has(position) ? "pip" : "pip pip-empty";
+      half.append(pip);
+    }
+    tile.append(half);
+  }
+  const divider = document.createElement("span");
+  divider.className = "domino-divider";
+  tile.insertBefore(divider, tile.children[1]);
+  return tile;
+}
 function tileLabel(tile) { return tile.first + " | " + tile.second; }
 function canPlayTile(tile) {
   if (!game) return false;
@@ -163,19 +192,20 @@ function renderGame() {
     board.append(empty);
   } else {
     game.board.forEach((tile) => {
-      const node = document.createElement("span");
-      node.className = "domino-tile board-tile";
-      node.textContent = tile.leftPip + " | " + tile.rightPip;
-      board.append(node);
+      board.append(createDominoElement(tile.leftPip, tile.rightPip, "domino-tile board-tile"));
     });
   }
   const hand = $("#hand");
   hand.replaceChildren();
   $("#handCount").textContent = yourHand.length + " أحجار";
   yourHand.forEach((tile) => {
-    const button = document.createElement("button");
-    button.className = "domino-tile hand-tile" + (selectedTile && selectedTile.first === tile.first && selectedTile.second === tile.second ? " selected" : "");
-    button.textContent = tileLabel(tile);
+    const button = createDominoElement(
+      tile.first,
+      tile.second,
+      "domino-tile hand-tile" + (selectedTile && selectedTile.first === tile.first && selectedTile.second === tile.second ? " selected" : ""),
+      "button"
+    );
+    button.type = "button";
     button.disabled = game.isFinished || game.currentSeat !== player?.seat;
     button.addEventListener("click", () => chooseTile(tile));
     hand.append(button);
