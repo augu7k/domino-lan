@@ -89,3 +89,38 @@ test("rejects duplicate player names", async () => {
     for (const client of clients) client.close();
   }
 });
+
+
+test("game state exposes only the receiving player's hand", async () => {
+  const clients = await Promise.all(Array.from({ length: 4 }, () => connect()));
+  try {
+    const acceptedHost = nextMessage(clients[0], "join_accepted");
+    send(clients[0], "create_room", { playerName: "HostSecure" });
+    const { room } = await acceptedHost;
+    for (let index = 1; index < 4; index++) {
+      const accepted = nextMessage(clients[index], "join_accepted");
+      send(clients[index], "join_room", { roomCode: room.roomCode, playerName: `Secure${index}` });
+      await accepted;
+    }
+    for (let index = 1; index < 4; index++) {
+      const snapshot = nextMessage(clients[index], "room_snapshot");
+      send(clients[index], "set_ready", { ready: true });
+      await snapshot;
+    }
+    const states = clients.map((client) => nextMessage(client, "game_state"));
+    send(clients[0], "start_game");
+    const received = await Promise.all(states);
+    for (const payload of received) {
+      assert.equal(payload.yourHand.length, 7);
+      assert.equal(Object.hasOwn(payload.game, "hands"), false);
+      assert.equal(Object.hasOwn(payload.game, "yourHand"), false);
+      assert.equal(payload.game.remainingTiles.reduce((sum, count) => sum + count, 0), 28);
+    }
+    const uniqueHands = new Set(received.map((payload) =>
+      payload.yourHand.map((tile) => `${tile.first}:${tile.second}`).sort().join(",")
+    ));
+    assert.equal(uniqueHands.size, 4);
+  } finally {
+    for (const client of clients) client.close();
+  }
+});
