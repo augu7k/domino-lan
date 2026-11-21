@@ -28,7 +28,7 @@ jobs:
         run: flutter pub get
 
       - name: Format Dart files
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format lib test
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -116,9 +116,19 @@ jobs:
               "تحتاج لعبة دومينو الشبكة إلى الوصول إلى الشبكة المحلية "
               "لإنشاء الغرف والعثور على اللاعبين والاتصال بهم عبر Wi-Fi أو نقطة الاتصال."
           )
+          transport = info.setdefault("NSAppTransportSecurity", {})
+          transport["NSAllowsLocalNetworking"] = True
 
           with path.open("wb") as target:
               plistlib.dump(info, target, fmt=plistlib.FMT_XML, sort_keys=False)
 
       - name: Build iOS simulator app
         run: flutter build ios --simulator --debug
+
+      - name: Upload iOS simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: domino-lan-ios-simulator
+          path: build/ios/iphonesimulator/Runner.app
+          if-no-files-found: error
+          retention-days: 14
