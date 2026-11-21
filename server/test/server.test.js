@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { WebSocket } from "ws";
 import { httpServer } from "../src/server.js";
-import { createRound, playTile, passTurn } from "../src/game-engine.js";
+import { createRound, playTile, passTurn, publicGameState } from "../src/game-engine.js";
 
 let base;
 let wsUrl;
