@@ -148,10 +148,28 @@ function handleMessage(socket, raw) {
       if (room.seats.some((entry) => !entry) || room.seats.some((entry) => !entry.isReady)) {
         return reject(socket, "PLAYERS_NOT_READY", "يجب انضمام أربعة لاعبين واستعدادهم جميعاً.");
       }
-      room.game = createRound(room.seats.map((entry) => ({ id: entry.id, name: entry.name, seat: entry.seat })));
+      room.roundNumber = 1;
+      room.game = createRound(room.seats.map((entry) => ({ id: entry.id, name: entry.name, seat: entry.seat })), [0, 0], room.roundNumber);
       room.gameStarted = true;
       room.startedAt = Date.now();
       broadcast(room, "game_started");
+      broadcastGame(room, "game_state");
+      return;
+    }
+    case "next_round": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      const { room, player } = session;
+      if (!player.isHost) return reject(socket, "HOST_ONLY", "المضيف وحده يستطيع بدء الجولة التالية.");
+      if (!room.gameStarted || !room.game?.isFinished) {
+        return reject(socket, "ROUND_NOT_FINISHED", "لا يمكن بدء جولة جديدة قبل انتهاء الجولة الحالية.");
+      }
+      room.roundNumber = (room.roundNumber || room.game.roundNumber || 1) + 1;
+      room.game = createRound(
+        room.seats.map((entry) => ({ id: entry.id, name: entry.name, seat: entry.seat })),
+        room.game.teamScores,
+        room.roundNumber,
+      );
       broadcastGame(room, "game_state");
       return;
     }
