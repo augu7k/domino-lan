@@ -76,6 +76,7 @@ class DominoLobbyHost {
       switch (decoded['type']) {
         case 'join':
           _handleJoin(socket, decoded);
+          return;
         case 'ready':
           final playerId = _connectionPlayers[socket];
           if (playerId == null) {
