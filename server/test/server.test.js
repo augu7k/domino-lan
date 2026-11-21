@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { WebSocket } from "ws";
 import { httpServer } from "../src/server.js";
+import { createRound, playTile, passTurn } from "../src/game-engine.js";
 
 let base;
 let wsUrl;
@@ -213,4 +214,98 @@ test("only the host can start a fully ready room", async () => {
   } finally {
     for (const client of clients) client.close();
   }
+});
+
+
+function makeEngineRoom(hands, board, currentSeat = 0, teamScores = [0, 0]) {
+  return {
+    code: "123456",
+    seats: Array.from({ length: 4 }, (_, seat) => ({
+      id: `engine-player-${seat}`,
+      name: `Player ${seat + 1}`,
+      seat,
+      socket: {},
+    })),
+    game: {
+      hands,
+      board,
+      currentSeat,
+      consecutivePasses: 0,
+      teamScores: [...teamScores],
+      isFinished: false,
+      result: null,
+    },
+  };
+}
+
+test("double-six round contains all 28 unique tiles and deals seven to each player", () => {
+  const players = Array.from({ length: 4 }, (_, seat) => ({ seat }));
+  const round = createRound(players);
+  const allTiles = round.hands.flat();
+  assert.equal(allTiles.length, 28);
+  assert.ok(round.hands.every((hand) => hand.length === 7));
+  assert.equal(new Set(allTiles.map((tile) => `${tile.first}:${tile.second}`)).size, 28);
+  assert.ok(round.hands[round.currentSeat].some((tile) => tile.first === 6 && tile.second === 6));
+});
+
+test("awards the opposing team's remaining pips when a player empties their hand", () => {
+  const room = makeEngineRoom(
+    [
+      [{ first: 6, second: 0 }],
+      [{ first: 3, second: 4 }],
+      [{ first: 1, second: 1 }],
+      [{ first: 2, second: 2 }],
+    ],
+    [{ first: 6, second: 6, leftPip: 6, rightPip: 6 }],
+  );
+
+  playTile(room, 0, { first: 6, second: 0 }, "right");
+
+  assert.equal(room.game.isFinished, true);
+  assert.deepEqual(room.game.result, {
+    reason: "player_emptied_hand",
+    winningTeam: 0,
+    pointsAwarded: 11,
+    teamRemainingPips: [2, 11],
+  });
+  assert.deepEqual(room.game.teamScores, [11, 0]);
+});
+
+test("ends a blocked round after four passes and awards the losing team's pips", () => {
+  const room = makeEngineRoom(
+    [
+      [{ first: 1, second: 1 }],
+      [{ first: 3, second: 3 }],
+      [{ first: 2, second: 2 }],
+      [{ first: 4, second: 4 }],
+    ],
+    [{ first: 0, second: 0, leftPip: 0, rightPip: 0 }],
+  );
+
+  for (let seat = 0; seat < 4; seat++) passTurn(room, seat);
+
+  assert.equal(room.game.isFinished, true);
+  assert.deepEqual(room.game.result, {
+    reason: "blocked",
+    winningTeam: 0,
+    pointsAwarded: 14,
+    teamRemainingPips: [6, 14],
+  });
+  assert.deepEqual(room.game.teamScores, [14, 0]);
+});
+
+test("does not allow a player to pass while holding a legal tile", () => {
+  const room = makeEngineRoom(
+    [
+      [{ first: 0, second: 5 }],
+      [{ first: 2, second: 2 }],
+      [{ first: 3, second: 3 }],
+      [{ first: 4, second: 4 }],
+    ],
+    [{ first: 0, second: 6, leftPip: 0, rightPip: 6 }],
+  );
+
+  assert.throws(() => passTurn(room, 0), /لا يمكنك التمرير/);
+  assert.equal(room.game.currentSeat, 0);
+  assert.equal(room.game.consecutivePasses, 0);
 });
