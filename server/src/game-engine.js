@@ -74,9 +74,7 @@ function finishRound(room, winningTeam, reason) {
   }
   let pointsAwarded = 0;
   if (winningTeam !== null) {
-    pointsAwarded = reason === "player_emptied_hand"
-      ? remaining[1 - winningTeam]
-      : remaining[1 - winningTeam];
+    pointsAwarded = remaining[1 - winningTeam];
     game.teamScores[winningTeam] += pointsAwarded;
   }
   game.isFinished = true;
