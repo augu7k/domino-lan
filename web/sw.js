@@ -1,4 +1,4 @@
-const CACHE = "domino-web-shell-v1";
+const CACHE = "domino-web-shell-v2";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));

@@ -17,36 +17,70 @@
       <div><p class="eyebrow">أربعة لاعبين · فريقان</p><h1>دومينو الشبكة</h1></div>
       <button id="installButton" class="install-button" hidden>تثبيت</button>
     </header>
+
     <section class="hero">
       <div class="hero-chip">Double-Six · Classic</div>
       <h2>اجمع فريقك وابدأ اللعب</h2>
-      <p>اختر طريقة الاتصال المناسبة لك. يمكنك فتح اللعبة من Android أو iPhone أو الكمبيوتر.</p>
+      <p>أنشئ غرفة أو انضم إلى أصدقائك. لكل لاعب أحجاره الخاصة، والخادم يتحقق من الحركات والنتائج.</p>
       <div class="tiles" aria-hidden="true"><span>6|6</span><span>5|2</span><span>4|1</span></div>
     </section>
-    <section class="mode-section" aria-labelledby="modeTitle">
-      <h2 id="modeTitle">طريقة اللعب</h2>
-      <div class="mode-grid">
-        <article class="mode-card">
-          <div class="mode-icon">⌁</div>
-          <h3>عبر الإنترنت</h3>
-          <p>أنشئ غرفة والعب مع أصدقائك حتى لو كانوا في أماكن مختلفة.</p>
-          <span class="status status-progress">قيد التجهيز</span>
-          <button class="mode-button primary" id="onlineButton">اختيار اللعب عبر الإنترنت</button>
-        </article>
-        <article class="mode-card">
-          <div class="mode-icon">⌁</div>
-          <h3>نقطة اتصال / Wi-Fi</h3>
-          <p>العب مع الأجهزة الموجودة على الشبكة المحلية، حتى دون إنترنت.</p>
-          <span class="status status-progress">قيد التجهيز</span>
-          <button class="mode-button secondary" id="localButton">اختيار اللعب المحلي</button>
-        </article>
+
+    <section class="connection-card">
+      <h2>الاتصال بالخادم</h2>
+      <label for="serverUrl">عنوان الخادم</label>
+      <input id="serverUrl" type="url" inputmode="url" placeholder="https://your-server.onrender.com" autocomplete="url">
+      <p class="hint">أدخل عنوان الخادم بعد نشره. لا تضع /ws في النهاية؛ التطبيق يضيفه تلقائياً.</p>
+      <div class="connection-row">
+        <span id="connectionStatus" class="connection-status">غير متصل</span>
+        <button id="connectButton" class="mode-button primary">اتصال</button>
       </div>
     </section>
-    <section class="notice" id="modeNotice" role="status" aria-live="polite">
-      <strong>نسخة الويب التأسيسية</strong>
-      <p>تم تجهيز واجهة التطبيق وقابلية التثبيت. لم يتم تفعيل إنشاء الغرف أو الاتصال بالمباريات بعد.</p>
+
+    <section id="lobbyPanel" class="panel">
+      <h2>ابدأ اللعب</h2>
+      <label for="playerName">اسم اللاعب</label>
+      <input id="playerName" maxlength="20" placeholder="اكتب اسمك" autocomplete="nickname">
+      <div class="action-grid">
+        <button id="createButton" class="mode-button primary" disabled>إنشاء غرفة</button>
+        <div class="join-controls">
+          <input id="roomCode" inputmode="numeric" maxlength="6" placeholder="رمز الغرفة">
+          <button id="joinButton" class="mode-button secondary" disabled>انضمام</button>
+        </div>
+      </div>
     </section>
-    <footer>الإصدار التأسيسي للويب · 0.2.0</footer>
+
+    <section id="roomPanel" class="panel" hidden>
+      <div class="room-heading">
+        <div><p class="eyebrow">رمز الغرفة</p><strong id="roomCodeLabel" class="room-code">------</strong></div>
+        <button id="copyCodeButton" class="small-button">نسخ الرمز</button>
+      </div>
+      <h2>اللاعبون</h2>
+      <div id="playersList" class="players-list"></div>
+      <div class="room-actions">
+        <button id="readyButton" class="mode-button secondary" disabled>أنا جاهز</button>
+        <button id="startButton" class="mode-button primary" hidden disabled>ابدأ المباراة</button>
+      </div>
+    </section>
+
+    <section id="gamePanel" class="panel" hidden>
+      <div class="game-heading">
+        <div><p class="eyebrow">دور اللاعب</p><strong id="turnLabel">—</strong></div>
+        <div class="scores"><span>الفريق الأول <b id="score0">0</b></span><span>الفريق الثاني <b id="score1">0</b></span></div>
+      </div>
+      <div id="board" class="board" aria-label="سلسلة أحجار الدومينو"></div>
+      <p id="gameMessage" class="game-message">انتظر دورك.</p>
+      <div class="hand-heading"><h2>أحجارك</h2><span id="handCount" class="hint"></span></div>
+      <div id="hand" class="hand"></div>
+      <div id="moveChoices" class="move-choices" hidden></div>
+      <button id="passButton" class="mode-button secondary pass-button" disabled>تمرير الدور</button>
+      <div id="roundResult" class="round-result" hidden></div>
+    </section>
+
+    <section id="notice" class="notice" role="status" aria-live="polite">
+      <strong>ملاحظة</strong>
+      <p>خادم الإنترنت لم يُنشر بعد. بعد نشره، أدخل رابطه هنا للاتصال.</p>
+    </section>
+    <footer>دومينو الشبكة · إصدار الويب</footer>
   </main>
   <script src="./app.js" defer></script>
 </body>
