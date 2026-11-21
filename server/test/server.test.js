@@ -232,6 +232,8 @@ function makeEngineRoom(hands, board, currentSeat = 0, teamScores = [0, 0]) {
       currentSeat,
       consecutivePasses: 0,
       teamScores: [...teamScores],
+      roundNumber: 1,
+      roundHistory: [],
       isFinished: false,
       result: null,
     },
