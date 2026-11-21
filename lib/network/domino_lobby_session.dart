@@ -173,7 +173,7 @@ class DominoLobbyHost {
         _sendError(socket, 'انتهت صلاحية جلسة الاستعادة.');
         return;
       }
-      _connectionPlayers[socket] = playerId;
+      _connectionPlayers[socket] = player.id;
       _server.sendTo(socket, <String, Object?>{
         'v': 1,
         'type': 'joined',
