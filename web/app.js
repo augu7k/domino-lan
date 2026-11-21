@@ -136,6 +136,14 @@ function renderRoom() {
   if (room.gameStarted) $("#roomPanel").hidden = true;
 }
 function tileLabel(tile) { return tile.first + " | " + tile.second; }
+function canPlayTile(tile) {
+  if (!game) return false;
+  if (!game.board.length) return tile.first === 6 && tile.second === 6;
+  const left = game.board[0].leftPip;
+  const right = game.board.at(-1).rightPip;
+  return tile.first === left || tile.second === left ||
+    tile.first === right || tile.second === right;
+}
 function renderGame() {
   if (!game) return;
   $("#lobbyPanel").hidden = true;
@@ -172,8 +180,11 @@ function renderGame() {
     button.addEventListener("click", () => chooseTile(tile));
     hand.append(button);
   });
-  $("#passButton").disabled = game.isFinished || game.currentSeat !== player?.seat;
-  $("#passButton").hidden = game.isFinished;
+  const isMyTurn = game.currentSeat === player?.seat;
+  const hasLegalMove = yourHand.some(canPlayTile);
+  $("#passButton").disabled = game.isFinished || !isMyTurn || hasLegalMove;
+  $("#passButton").hidden = game.isFinished || hasLegalMove || !isMyTurn;
+
   if (game.isFinished && game.result) {
     const result = game.result;
     $("#roundResult").hidden = false;
