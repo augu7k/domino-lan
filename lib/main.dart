@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/connection_test_screen.dart';
+import 'screens/lobby_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,12 +112,16 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.sports_esports_outlined),
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LobbyScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.groups),
                     label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 14),
-                      child: Text('اللعب الجماعي — قيد التطوير'),
+                      child: Text('إنشاء غرفة / الانضمام للعب'),
                     ),
                   ),
                   const SizedBox(height: 20),
