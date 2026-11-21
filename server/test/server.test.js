@@ -351,3 +351,37 @@ test("next round is host-only and carries the previous team scores forward", asy
     for (const client of clients) client.close();
   }
 });
+
+
+test("round history records each result and carries it into the next round", () => {
+  const room = makeEngineRoom(
+    [
+      [{ first: 0, second: 6 }],
+      [{ first: 3, second: 4 }],
+      [{ first: 1, second: 1 }],
+      [{ first: 2, second: 2 }],
+    ],
+    [{ first: 6, second: 6, leftPip: 6, rightPip: 6 }],
+  );
+  room.game.roundNumber = 1;
+  room.game.roundHistory = [];
+  playTile(room, 0, { first: 0, second: 6 }, "right");
+  assert.deepEqual(room.game.roundHistory, [{
+    roundNumber: 1,
+    reason: "player_emptied_hand",
+    winningTeam: 0,
+    pointsAwarded: 11,
+    teamScores: [11, 0],
+  }]);
+  const next = createRound(
+    room.seats.map(({ id, name, seat }) => ({ id, name, seat })),
+    room.game.teamScores,
+    2,
+    room.game.roundHistory,
+  );
+  const publicState = publicGameState({ code: room.code, seats: room.seats, game: next });
+  assert.equal(publicState.roundNumber, 2);
+  assert.deepEqual(publicState.teamScores, [11, 0]);
+  assert.deepEqual(publicState.roundHistory, room.game.roundHistory);
+  assert.equal(next.roundHistory.length, 1);
+});
