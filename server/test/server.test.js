@@ -124,3 +124,93 @@ test("game state exposes only the receiving player's hand", async () => {
     for (const client of clients) client.close();
   }
 });
+
+
+test("rejects a fifth player when all four seats are occupied", async () => {
+  const clients = await Promise.all(Array.from({ length:  5 }, () => connect()));
+  try {
+    const acceptedHost = nextMessage(clients[0], "join_accepted");
+    send(clients[0], "create_room", { playerName: "FullHost" });
+    const { room } = await acceptedHost;
+    for (let index = 1; index < 4; index++) {
+      const accepted = nextMessage(clients[index], "join_accepted");
+      send(clients[index], "join_room", { roomCode: room.roomCode, playerName: `Full${index}` });
+      await accepted;
+    }
+    const rejected = nextMessage(clients[4], "error");
+    send(clients[4], "join_room", { roomCode: room.roomCode, playerName: "Fifth" });
+    await assert.rejects(rejected, /مكتملة/);
+  } finally {
+    for (const client of clients) client.close();
+  }
+});
+
+test("reconnect restores the same seat and private hand during a game", async () => {
+  const clients = await Promise.all(Array.from({ length: 4 }, () => connect()));
+  let replacement;
+  try {
+    const acceptedHost = nextMessage(clients[0], "join_accepted");
+    send(clients[0], "create_room", { playerName: "ResumeHost" });
+    const host = await acceptedHost;
+    const roomCode = host.room.roomCode;
+    const resumeToken = host.resumeToken;
+    for (let index = 1; index < 4; index++) {
+      const accepted = nextMessage(clients[index], "join_accepted");
+      send(clients[index], "join_room", { roomCode, playerName: `Resume${index}` });
+      await accepted;
+    }
+    for (let index = 1; index < 4; index++) {
+      const snapshot = nextMessage(clients[index], "room_snapshot");
+      send(clients[index], "set_ready", { ready: true });
+      await snapshot;
+    }
+    const initialStates = clients.map((client) => nextMessage(client, "game_state"));
+    send(clients[0], "start_game");
+    const initial = await Promise.all(initialStates);
+    const originalHand = initial[0].yourHand;
+    const disconnected = once(clients[0], "close");
+    clients[0].close();
+    await disconnected;
+
+    replacement = await connect();
+    const resumed = nextMessage(replacement, "join_accepted");
+    const restoredState = nextMessage(replacement, "game_state");
+    send(replacement, "reconnect", { roomCode, resumeToken });
+    const accepted = await resumed;
+    const state = await restoredState;
+    assert.equal(accepted.player.seat, 0);
+    assert.equal(accepted.player.name, "ResumeHost");
+    assert.deepEqual(state.yourHand, originalHand);
+    assert.equal(state.game.currentSeat, initial[0].game.currentSeat);
+  } finally {
+    for (const client of clients) client.close();
+    replacement?.close();
+  }
+});
+
+test("only the host can start a fully ready room", async () => {
+  const clients = await Promise.all(Array.from({ length: 4 }, () => connect()));
+  try {
+    const acceptedHost = nextMessage(clients[0], "join_accepted");
+    send(clients[0], "create_room", { playerName: "AuthorityHost" });
+    const { room } = await acceptedHost;
+    for (let index = 1; index < 4; index++) {
+      const accepted = nextMessage(clients[index], "join_accepted");
+      send(clients[index], "join_room", { roomCode: room.roomCode, playerName: `Authority${index}` });
+      await accepted;
+    }
+    for (let index = 1; index < 4; index++) {
+      const snapshot = nextMessage(clients[index], "room_snapshot");
+      send(clients[index], "set_ready", { ready: true });
+      await snapshot;
+    }
+    const rejected = nextMessage(clients[1], "error");
+    send(clients[1], "start_game");
+    await assert.rejects(rejected, /المضيف وحده/);
+    const hostStarted = nextMessage(clients[0], "game_started");
+    send(clients[0], "start_game");
+    assert.equal((await hostStarted).gameStarted, true);
+  } finally {
+    for (const client of clients) client.close();
+  }
+});
