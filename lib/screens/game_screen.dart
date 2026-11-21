@@ -106,8 +106,8 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
           Card(child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              Text('الفريق 1: \${scores.isNotEmpty ? scores[0] : 0}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text('الفريق 2: \${scores.length > 1 ? scores[1] : 0}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('الفريق 1: ${scores.isNotEmpty ? scores[0] : 0}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('الفريق 2: ${scores.length > 1 ? scores[1] : 0}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ]),
           )),
           Card(
@@ -115,7 +115,7 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(children: [
-                Text(finished ? 'انتهت الجولة' : myTurn ? 'دورك الآن' : 'دور اللاعب \${currentSeat + 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(finished ? 'انتهت الجولة' : myTurn ? 'دورك الآن' : 'دور اللاعب ${currentSeat + 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 if (board.isEmpty) const Text('ابدأ بحجر 6 | 6', style: TextStyle(color: Colors.white))
                 else SingleChildScrollView(
@@ -134,7 +134,7 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
           Card(child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('أحجارك (\${hand.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('أحجارك (${hand.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 alignment: WrapAlignment.center,
@@ -162,7 +162,7 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
             Card(child: Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
-                result['winningTeam'] == null ? 'انتهت الجولة بالتعادل' : 'فاز الفريق \${(result['winningTeam'] as int) + 1} • النقاط \${result['pointsAwarded']}',
+                result['winningTeam'] == null ? 'انتهت الجولة بالتعادل' : 'فاز الفريق ${(result['winningTeam'] as int) + 1} • النقاط ${result['pointsAwarded']}',
                 textAlign: TextAlign.center,
               ),
             )),

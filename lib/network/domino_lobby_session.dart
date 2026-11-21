@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-extension _IterableFirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull {
-    final iterator = this.iterator;
-    return iterator.moveNext() ? iterator.current : null;
-  }
-}
-
 import '../domain/domino_lobby.dart';
 import '../domain/domino_engine.dart';
 import '../domain/domino_tile.dart';
 import '../domain/game_state.dart';
 import 'local_discovery_host.dart';
 import 'local_web_socket.dart';
+
+extension _IterableFirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull {
+    final iterator = this.iterator;
+    return iterator.moveNext() ? iterator.current : null;
+  }
+}
 
 class DominoLobbyHost {
   DominoLobbyHost({required this.hostName});
