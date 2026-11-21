@@ -67,7 +67,7 @@ export function publicGameState(room) {
     consecutivePasses: game.consecutivePasses,
     teamScores: [...game.teamScores],
     roundNumber: game.roundNumber,
-    roundHistory: game.roundHistory.map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
+    roundHistory: (game.roundHistory ?? []).map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
     remainingTiles: game.hands.map((hand) => hand.length),
     isFinished: game.isFinished,
     result: game.result ? { ...game.result } : null,
@@ -87,6 +87,7 @@ function finishRound(room, winningTeam, reason) {
   }
   game.isFinished = true;
   game.result = { reason, winningTeam, pointsAwarded, teamRemainingPips: remaining };
+  game.roundHistory ??= [];
   game.roundHistory.push({
     roundNumber: game.roundNumber,
     reason,
