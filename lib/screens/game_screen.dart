@@ -36,6 +36,7 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
       widget.client!.onGameState = (snapshot) { if (mounted) setState(() { state = snapshot; selected = null; }); };
       widget.client!.onHand = (tiles) { if (mounted) setState(() => hand = List.of(tiles)); };
       widget.client!.onError = (message) { if (mounted) setState(() => error = message); };
+      widget.client!.onConnectionStatus = (message) { if (mounted) setState(() => error = message); };
     }
   }
 
@@ -46,6 +47,7 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
       widget.client!.onGameState = null;
       widget.client!.onHand = null;
       widget.client!.onError = null;
+      widget.client!.onConnectionStatus = null;
     }
     super.dispose();
   }
@@ -157,6 +159,14 @@ class _DominoGameScreenState extends State<DominoGameScreen> {
               OutlinedButton(onPressed: myTurn && !hasMove ? pass : null, child: const Text('تمرير الدور عند عدم وجود حركة')),
             ]),
           )),
+          if (widget.client != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: widget.client!.isConnected ? null : () => widget.client!.reconnect(),
+              icon: const Icon(Icons.wifi),
+              label: const Text('إعادة الاتصال بالمباراة'),
+            ),
+          ],
           if (error != null) Text(error!, style: const TextStyle(color: Colors.red)),
           if (finished && result != null)
             Card(child: Padding(
