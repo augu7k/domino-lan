@@ -181,6 +181,7 @@ function renderGame() {
   const isMyTurn = game.currentSeat === player?.seat;
   const hasLegalMove = yourHand.some(canPlayTile);
   $("#turnLabel").textContent = current ? current.name + (current.id === player?.id ? " (دورك)" : "") : "—";
+  $("#roundLabel").textContent = game.roundNumber || 1;
   $("#score0").textContent = game.teamScores[0];
   $("#score1").textContent = game.teamScores[1];
   $("#gameMessage").textContent = game.isFinished ? "انتهت الجولة." : isMyTurn
@@ -222,8 +223,10 @@ function renderGame() {
     $("#roundResult").textContent = result.winningTeam === null
       ? "تعادل بسبب انسداد اللعب. لم تُضف نقاط."
       : "فاز الفريق " + (result.winningTeam + 1) + " · النقاط المضافة: " + result.pointsAwarded;
+    $("#nextRoundButton").hidden = player?.seat !== 0;
   } else {
     $("#roundResult").hidden = true;
+    $("#nextRoundButton").hidden = true;
   }
 }
 function chooseTile(tile) {
@@ -285,6 +288,7 @@ $("#readyButton").addEventListener("click", () => {
 });
 $("#startButton").addEventListener("click", () => send("start_game"));
 $("#passButton").addEventListener("click", () => send("pass_turn"));
+$("#nextRoundButton").addEventListener("click", () => send("next_round"));
 $("#copyCodeButton").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(room.roomCode); showNotice("تم النسخ", "تم نسخ رمز الغرفة."); }
   catch { showNotice("رمز الغرفة", room.roomCode); }
