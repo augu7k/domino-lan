@@ -169,6 +169,7 @@ function handleMessage(socket, raw) {
         room.seats.map((entry) => ({ id: entry.id, name: entry.name, seat: entry.seat })),
         room.game.teamScores,
         room.roundNumber,
+        room.game.roundHistory,
       );
       broadcastGame(room, "game_state");
       return;
