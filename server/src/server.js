@@ -1,15 +1,15 @@
 import { createServer } from "node:http";
 import { randomInt, randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
+import { createRound, playTile, passTurn, publicGameState } from "./game-engine.js";
 
 const PORT = Number(process.env.PORT || 8080);
 const MAX_ROOMS = Number(process.env.MAX_ROOMS || 500);
 const ROOM_TTL_MS = Number(process.env.ROOM_TTL_MS || 6 * 60 * 60 * 1000);
 const rooms = new Map();
 const sockets = new Map();
-
 const json = (socket, type, payload = {}) => {
-  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ v: 1, type, payload }));
+  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ v: 1, type, payload }));
 };
 const safeName = (value) => typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, 20) : "";
 const validCode = (value) => typeof value === "string" && /^\d{6}$/.test(value);
@@ -27,31 +27,37 @@ function makeCode() {
 }
 function publicRoom(room) {
   return {
-    roomCode: room.code,
-    gameStarted: room.gameStarted,
-    players: room.seats.map((player) => player ? {
-      id: player.id, name: player.name, seat: player.seat,
-      team: player.seat % 2 === 0 ? 0 : 1, isHost: player.isHost,
-      isReady: player.isReady,
-      connected: Boolean(player.socket && player.socket.readyState === WebSocket.OPEN)
-    } : null)
+    roomCode: room.code, gameStarted: room.gameStarted,
+    players: room.seats.map((p) => p ? {
+      id: p.id, name: p.name, seat: p.seat, team: p.seat % 2,
+      isHost: p.isHost, isReady: p.isReady,
+      connected: Boolean(p.socket?.readyState === WebSocket.OPEN),
+    } : null),
   };
 }
 function broadcast(room, type = "room_snapshot") {
   const payload = publicRoom(room);
   for (const player of room.seats) if (player?.socket) json(player.socket, type, payload);
 }
-function sendPrivateState(player, room) {
-  json(player.socket, "join_accepted", {
-    room: publicRoom(room),
-    player: { id: player.id, name: player.name, seat: player.seat, team: player.seat % 2 === 0 ? 0 : 1 },
-    resumeToken: player.resumeToken
-  });
+function broadcastGame(room, type = "game_state") {
+  const state = publicGameState(room);
+  for (const player of room.seats) {
+    if (player?.socket) json(player.socket, type, {
+      game: state,
+      yourHand: room.game.hands[player.seat].map((tile) => ({ ...tile })),
+    });
+  }
 }
 function reject(socket, code, message, requestId) {
   json(socket, "error", { code, message, requestId: requestId ?? null });
 }
 function getRoom(code) { return validCode(code) ? rooms.get(code) : undefined; }
+function sessionFor(socket) {
+  const session = sockets.get(socket);
+  const room = session && rooms.get(session.roomCode);
+  const player = room?.seats.find((p) => p?.id === session.playerId);
+  return room && player ? { room, player } : null;
+}
 function attachPlayer(socket, room, player) {
   if (player.socket && player.socket !== socket && player.socket.readyState === WebSocket.OPEN) {
     player.socket.close(4001, "Session resumed on another connection");
@@ -60,16 +66,29 @@ function attachPlayer(socket, room, player) {
   player.lastSeenAt = Date.now();
   sockets.set(socket, { roomCode: room.code, playerId: player.id });
 }
+function sendAccepted(player, room) {
+  json(player.socket, "join_accepted", {
+    room: publicRoom(room),
+    player: { id: player.id, name: player.name, seat: player.seat, team: player.seat % 2 },
+    resumeToken: player.resumeToken,
+  });
+  if (room.gameStarted) {
+    json(player.socket, "game_state", {
+      game: publicGameState(room),
+      yourHand: room.game.hands[player.seat].map((tile) => ({ ...tile })),
+    });
+  }
+}
 function createRoom(socket, payload) {
   if (rooms.size >= MAX_ROOMS) return reject(socket, "SERVER_FULL", "الخادم ممتلئ حالياً.");
   const name = safeName(payload.playerName);
   if (!name) return reject(socket, "INVALID_NAME", "أدخل اسماً من حرف إلى 20 حرفاً.");
   const code = makeCode();
   const player = { id: randomUUID(), name, seat: 0, isHost: true, isReady: true, resumeToken: token(), socket, lastSeenAt: Date.now() };
-  const room = { code, seats: [player, null, null, null], gameStarted: false, createdAt: Date.now() };
+  const room = { code, seats: [player, null, null, null], gameStarted: false, game: null, createdAt: Date.now() };
   rooms.set(code, room);
   sockets.set(socket, { roomCode: code, playerId: player.id });
-  sendPrivateState(player, room);
+  sendAccepted(player, room);
   broadcast(room);
 }
 function joinRoom(socket, payload) {
@@ -86,7 +105,7 @@ function joinRoom(socket, payload) {
   const player = { id: randomUUID(), name, seat, isHost: false, isReady: false, resumeToken: token(), socket, lastSeenAt: Date.now() };
   room.seats[seat] = player;
   sockets.set(socket, { roomCode: room.code, playerId: player.id });
-  sendPrivateState(player, room);
+  sendAccepted(player, room);
   broadcast(room);
 }
 function resumeRoom(socket, payload) {
@@ -95,32 +114,8 @@ function resumeRoom(socket, payload) {
   const player = room.seats.find((p) => p && sameToken(p.resumeToken, payload.resumeToken));
   if (!player) return reject(socket, "RESUME_REJECTED", "تعذر استعادة الجلسة. تحقق من بيانات الاستعادة.");
   attachPlayer(socket, room, player);
-  sendPrivateState(player, room);
+  sendAccepted(player, room);
   broadcast(room, "player_reconnected");
-}
-function setReady(socket, payload) {
-  const session = sockets.get(socket);
-  const room = session && rooms.get(session.roomCode);
-  const player = room?.seats.find((p) => p?.id === session.playerId);
-  if (!room || !player) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
-  if (room.gameStarted) return reject(socket, "GAME_STARTED", "بدأت المباراة بالفعل.");
-  if (player.isHost) return reject(socket, "HOST_READY_FIXED", "المضيف جاهز تلقائياً.");
-  player.isReady = Boolean(payload.ready);
-  broadcast(room);
-}
-function startGame(socket) {
-  const session = sockets.get(socket);
-  const room = session && rooms.get(session.roomCode);
-  const player = room?.seats.find((p) => p?.id === session.playerId);
-  if (!room || !player) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
-  if (!player.isHost) return reject(socket, "HOST_ONLY", "المضيف وحده يستطيع بدء المباراة.");
-  if (room.gameStarted) return reject(socket, "GAME_STARTED", "بدأت المباراة بالفعل.");
-  if (room.seats.some((p) => !p) || room.seats.some((p) => !p.isReady)) {
-    return reject(socket, "PLAYERS_NOT_READY", "يجب انضمام أربعة لاعبين واستعدادهم جميعاً.");
-  }
-  room.gameStarted = true;
-  room.startedAt = Date.now();
-  broadcast(room, "game_started");
 }
 function handleMessage(socket, raw) {
   let message;
@@ -134,19 +129,70 @@ function handleMessage(socket, raw) {
     case "create_room": return createRoom(socket, p);
     case "join_room": return joinRoom(socket, p);
     case "reconnect": return resumeRoom(socket, p);
-    case "set_ready": return setReady(socket, p);
-    case "start_game": return startGame(socket);
+    case "set_ready": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      const { room, player } = session;
+      if (room.gameStarted) return reject(socket, "GAME_STARTED", "بدأت المباراة بالفعل.");
+      if (player.isHost) return reject(socket, "HOST_READY_FIXED", "المضيف جاهز تلقائياً.");
+      player.isReady = Boolean(p.ready);
+      broadcast(room);
+      return;
+    }
+    case "start_game": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      const { room, player } = session;
+      if (!player.isHost) return reject(socket, "HOST_ONLY", "المضيف وحده يستطيع بدء المباراة.");
+      if (room.gameStarted) return reject(socket, "GAME_STARTED", "بدأت المباراة بالفعل.");
+      if (room.seats.some((entry) => !entry) || room.seats.some((entry) => !entry.isReady)) {
+        return reject(socket, "PLAYERS_NOT_READY", "يجب انضمام أربعة لاعبين واستعدادهم جميعاً.");
+      }
+      room.game = createRound(room.seats.map((entry) => ({ id: entry.id, name: entry.name, seat: entry.seat })));
+      room.gameStarted = true;
+      room.startedAt = Date.now();
+      broadcast(room, "game_started");
+      broadcastGame(room, "game_state");
+      return;
+    }
+    case "play_tile": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      try {
+        playTile(session.room, session.player.seat, p.tile, p.side);
+        broadcastGame(session.room);
+      } catch (error) { reject(socket, "INVALID_MOVE", error.message, message.requestId); }
+      return;
+    }
+    case "pass_turn": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      try {
+        passTurn(session.room, session.player.seat);
+        broadcastGame(session.room);
+      } catch (error) { reject(socket, "INVALID_PASS", error.message, message.requestId); }
+      return;
+    }
+    case "request_state": {
+      const session = sessionFor(socket);
+      if (!session) return reject(socket, "NOT_IN_ROOM", "انضم إلى غرفة أولاً.");
+      if (session.room.gameStarted) {
+        const { room, player } = session;
+        json(socket, "game_state", {
+          game: publicGameState(room),
+          yourHand: room.game.hands[player.seat].map((tile) => ({ ...tile })),
+        });
+      } else sendAccepted(session.player, session.room);
+      return;
+    }
     case "ping": return json(socket, "pong", { at: Date.now(), requestId: message.requestId ?? null });
     case "leave_room": {
-      const session = sockets.get(socket);
-      const room = session && rooms.get(session.roomCode);
-      const player = room?.seats.find((entry) => entry?.id === session.playerId);
-      if (player && !room.gameStarted && !player.isHost) room.seats[player.seat] = null;
-      sockets.delete(socket);
-      if (room) {
-        if (room.seats.every((entry) => !entry)) rooms.delete(room.code);
-        else broadcast(room);
+      const session = sessionFor(socket);
+      if (session && !session.room.gameStarted && !session.player.isHost) {
+        session.room.seats[session.player.seat] = null;
+        broadcast(session.room);
       }
+      sockets.delete(socket);
       return;
     }
     default: return reject(socket, "UNKNOWN_MESSAGE", "نوع الرسالة غير مدعوم.", message.requestId);
