@@ -39,11 +39,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   @override
   void initState() {
     super.initState();
-    _host.onChanged = () {
-      if (mounted) setState(() {});
-    };
-    _host.onError = _showStatus;
-    _host.onGameStarted = (_) => _showStatus('بدأت المباراة. المرحلة التالية: طاولة اللعب.');
     _client.onLobby = (lobby) {
       if (mounted) setState(() => _remoteLobby = lobby);
     };
