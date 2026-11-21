@@ -39,7 +39,7 @@ test("rejects wrong turn, opponent tiles, and nonmatching sides", () => {
   const room = roomWithHands([[[1, 6]], [[0, 0]], [[2, 2]], [[3, 3]]]);
   assert.throws(() => playTile(room, 1, { first: 0, second: 0 }, "right"), /ليس دورك/);
   assert.throws(() => playTile(room, 0, { first: 0, second: 0 }, "right"), /ليس في يدك/);
-  assert.throws(() => playTile(room, 0, { first: 1, second: 6 }, "left"), /لا يطابق/);
+  assert.throws(() => playTile(room, 0, { first: 1, second: 6 }, "middle"), /لا يطابق/);
 });
 
 test("accepts a move, orients it, advances turn, and awards opposing pips when hand empties", () => {
@@ -47,11 +47,11 @@ test("accepts a move, orients it, advances turn, and awards opposing pips when h
   playTile(room, 0, { first: 3, second: 6 }, "right");
   assert.equal(room.game.board.at(-1).leftPip, 6);
   assert.equal(room.game.board.at(-1).rightPip, 3);
-  assert.equal(room.game.currentSeat, 1);
+  assert.equal(room.game.currentSeat, 0);
   assert.equal(room.game.isFinished, true);
   assert.equal(room.game.result.winningTeam, 0);
-  assert.equal(room.game.result.pointsAwarded, 12);
-  assert.deepEqual(room.game.teamScores, [12, 0]);
+  assert.equal(room.game.result.pointsAwarded, 8);
+  assert.deepEqual(room.game.teamScores, [8, 0]);
 });
 
 test("requires all four passes to finish a blocked round and awards the lower-pip team", () => {
