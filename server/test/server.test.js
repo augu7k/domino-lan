@@ -309,3 +309,45 @@ test("does not allow a player to pass while holding a legal tile", () => {
   assert.equal(room.game.currentSeat, 0);
   assert.equal(room.game.consecutivePasses, 0);
 });
+
+
+test("next round is host-only and carries the previous team scores forward", async () => {
+  const clients = await Promise.all(Array.from({ length: 4 }, () => connect()));
+  try {
+    const acceptedHost = nextMessage(clients[0], "join_accepted");
+    send(clients[0], "create_room", { playerName: "RoundHost" });
+    const { room } = await acceptedHost;
+    for (let index = 1; index < 4; index++) {
+      const accepted = nextMessage(clients[index], "join_accepted");
+      send(clients[index], "join_room", { roomCode: room.roomCode, playerName: `Round${index}` });
+      await accepted;
+    }
+    for (let index = 1; index < 4; index++) {
+      const snapshot = nextMessage(clients[index], "room_snapshot");
+      send(clients[index], "set_ready", { ready: true });
+      await snapshot;
+    }
+    const initialStates = clients.map((client) => nextMessage(client, "game_state"));
+    send(clients[0], "start_game");
+    const states = await Promise.all(initialStates);
+    const roomRef = (await import("../src/server.js")).rooms.get(room.roomCode);
+    roomRef.game.teamScores = [25, 40];
+    roomRef.game.isFinished = true;
+
+    const rejected = nextMessage(clients[1], "error");
+    send(clients[1], "next_round");
+    await assert.rejects(rejected, /المضيف وحده/);
+
+    const nextStates = clients.map((client) => nextMessage(client, "game_state"));
+    send(clients[0], "next_round");
+    const updated = await Promise.all(nextStates);
+    for (const state of updated) {
+      assert.equal(state.game.roundNumber, 2);
+      assert.deepEqual(state.game.teamScores, [25, 40]);
+      assert.equal(state.game.isFinished, false);
+      assert.equal(state.yourHand.length, 7);
+    }
+  } finally {
+    for (const client of clients) client.close();
+  }
+});
