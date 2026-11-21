@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 
-export function createRound(players, teamScores = [0, 0]) {
+export function createRound(players, teamScores = [0, 0], roundNumber = 1) {
   if (!Array.isArray(players) || players.length !== 4 ||
       new Set(players.map((p) => p.seat)).size !== 4 ||
       ![0, 1, 2, 3].every((seat) => players.some((p) => p.seat === seat))) {
@@ -9,6 +9,9 @@ export function createRound(players, teamScores = [0, 0]) {
   if (!Array.isArray(teamScores) || teamScores.length !== 2 ||
       teamScores.some((score) => !Number.isInteger(score) || score < 0)) {
     throw new Error("Two non-negative team scores are required.");
+  }
+  if (!Number.isInteger(roundNumber) || roundNumber < 1) {
+    throw new Error("A positive round number is required.");
   }
 
   const deck = [];
@@ -32,6 +35,7 @@ export function createRound(players, teamScores = [0, 0]) {
     currentSeat,
     consecutivePasses: 0,
     teamScores: [...teamScores],
+    roundNumber,
     isFinished: false,
     result: null,
   };
@@ -60,6 +64,7 @@ export function publicGameState(room) {
     currentSeat: game.currentSeat,
     consecutivePasses: game.consecutivePasses,
     teamScores: [...game.teamScores],
+    roundNumber: game.roundNumber,
     remainingTiles: game.hands.map((hand) => hand.length),
     isFinished: game.isFinished,
     result: game.result ? { ...game.result } : null,
