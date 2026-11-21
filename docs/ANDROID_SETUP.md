@@ -1,21 +1,30 @@
-# إعداد منصة Android
+# إعداد وبناء Android
 
-أنشئ منصة Android من Flutter SDK بالأمر:
+يمكن تجهيز ملفات Android على جهاز التطوير باستخدام:
 
 ```bash
-flutter create --platforms=android .
+flutter create --platforms=android --org com.domino.lan .
+flutter pub get
+flutter test
+flutter run
 ```
 
-ثم راجع `android/app/src/main/AndroidManifest.xml` وأضف إذن الإنترنت للشبكة المحلية:
+## أذونات الشبكة
 
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-```
+يحتاج التطبيق إلى أذونات الإنترنت وحالة الشبكة وقراءة حالة Wi-Fi لاستخدام WebSocket وUDP على الشبكة المحلية. يضيفها مسار البناء الآلي في GitHub Actions إلى ملف Manifest.
 
-قد تتطلب بعض نسخ Android أو أساليب اكتشاف الشبكة أذونات إضافية. لا تطلب أذونات الموقع أو الأجهزة القريبة إلا إذا استُخدمت واجهة نظام تستلزمها فعلاً.
+تسمح نسخة التطوير باتصالات HTTP غير المشفرة لأن WebSocket المحلي يستخدم `ws://` داخل شبكة نقطة الاتصال. لا تستخدم هذا الإعداد لإرسال بيانات حساسة عبر شبكات عامة. قبل إصدار متجر أو استخدام شبكات غير موثوقة، ينبغي تضييق سياسة cleartext أو اعتماد تشفير ومصادقة مناسبة.
 
-يجب السماح باتصال HTTP/WebSocket غير المشفر إلى عنوان محلي داخل شبكة Hotspot فقط عند استخدام `ws://`، مع عدم فتح هذا الاستثناء لاتصالات إنترنت عامة. يمكن لاحقاً استخدام TLS محلي إذا ظهرت حاجة حقيقية لذلك.
+## بناء APK عبر GitHub Actions
 
-لا تضع مفاتيح توقيع APK أو كلمات مرور أو ملفات keystore في المستودع.
+كل تحديث على فرع `main` يشغّل:
+1. تنسيق Dart.
+2. تحليل Flutter.
+3. اختبارات المحرك.
+4. إنشاء ملفات Android.
+5. بناء APK تجريبي.
+6. رفع APK كـ Artifact باسم `domino-lan-debug-apk`.
+
+من صفحة Actions افتح آخر تشغيل ناجح، ثم نزّل Artifact. رابط Artifact مؤقت ويحتفظ به GitHub لمدة 14 يوماً.
+
+هذا APK تجريبي Debug وليس إصداراً نهائياً موقعاً. لا ترفع ملفات keystore أو كلمات المرور إلى المستودع.

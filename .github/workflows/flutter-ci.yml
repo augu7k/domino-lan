@@ -1,18 +1,83 @@
-name: Flutter checks
+name: Flutter Android checks
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test
-      - run: flutter analyze
-      - run: flutter test
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format Dart files
+        run: dart format lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Generate Android platform
+        run: flutter create --platforms=android --org com.domino.lan .
+
+      - name: Configure local network permissions
+        shell: python
+        run: |
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          android = "{http://schemas.android.com/apk/res/android}"
+
+          required = [
+              "android.permission.INTERNET",
+              "android.permission.ACCESS_NETWORK_STATE",
+              "android.permission.ACCESS_WIFI_STATE",
+          ]
+          existing = {
+              node.get(android + "name")
+              for node in root.findall("uses-permission")
+          }
+          for permission in required:
+              if permission not in existing:
+                  node = ET.Element("uses-permission")
+                  node.set(android + "name", permission)
+                  root.insert(0, node)
+
+          application = root.find("application")
+          if application is None:
+              raise SystemExit("AndroidManifest.xml has no application element")
+          application.set(android + "usesCleartextTraffic", "true")
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: domino-lan-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
