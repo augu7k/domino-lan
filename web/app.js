@@ -184,6 +184,29 @@ function renderGame() {
   $("#roundLabel").textContent = game.roundNumber || 1;
   $("#score0").textContent = game.teamScores[0];
   $("#score1").textContent = game.teamScores[1];
+  const history = $("#roundHistory");
+  history.replaceChildren();
+  if (!game.roundHistory?.length) {
+    const emptyHistory = document.createElement("p");
+    emptyHistory.className = "history-empty";
+    emptyHistory.textContent = "ستظهر نتائج الجولات هنا بعد انتهائها.";
+    history.append(emptyHistory);
+  } else {
+    for (const entry of [...game.roundHistory].reverse()) {
+      const row = document.createElement("div");
+      row.className = "history-row";
+      const roundName = document.createElement("strong");
+      roundName.textContent = "الجولة " + entry.roundNumber;
+      const outcome = document.createElement("span");
+      outcome.textContent = entry.winningTeam === null
+        ? "تعادل"
+        : "الفريق " + (entry.winningTeam + 1) + " · +" + entry.pointsAwarded;
+      const totals = document.createElement("small");
+      totals.textContent = "الفريق الأول: " + entry.teamScores[0] + " — الفريق الثاني: " + entry.teamScores[1];
+      row.append(roundName, outcome, totals);
+      history.append(row);
+    }
+  }
   $("#gameMessage").textContent = game.isFinished ? "انتهت الجولة." : isMyTurn
     ? hasLegalMove ? "دورك الآن: اختر حجراً مناسباً." : "لا تملك حجراً صالحاً؛ يمكنك تمرير الدور."
     : "انتظر دور اللاعب الآخر.";
