@@ -61,14 +61,21 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 28,
+                      horizontal: 20,
+                    ),
                     decoration: BoxDecoration(
                       color: DominoLanApp.felt,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: const Column(
                       children: [
-                        Icon(Icons.extension, size: 54, color: DominoLanApp.gold),
+                        Icon(
+                          Icons.extension,
+                          size: 54,
+                          color: DominoLanApp.gold,
+                        ),
                         SizedBox(height: 12),
                         Text(
                           'دومينو الشبكة',
@@ -82,7 +89,10 @@ class HomeScreen extends StatelessWidget {
                         Text(
                           'أربعة لاعبين • فريقان • دون إنترنت',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -101,10 +111,10 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const OutlinedButton.icon(
+                  OutlinedButton.icon(
                     onPressed: null,
-                    icon: Icon(Icons.sports_esports_outlined),
-                    label: Padding(
+                    icon: const Icon(Icons.sports_esports_outlined),
+                    label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 14),
                       child: Text('اللعب الجماعي — قيد التطوير'),
                     ),
