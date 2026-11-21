@@ -28,7 +28,9 @@ class DominoLobbyHost {
   int _nextPlayerNumber = 1;
   bool _started = false;
   DominoGameState? _gameState;
+  Map<String, Object?>? _lastGameSnapshot;
 
+  Map<String, Object?>? get gameSnapshot => _lastGameSnapshot;
   DominoGameState? get gameState => _gameState;
   List<DominoTile> get hostHand => _gameState?.handForSeat(0) ?? const <DominoTile>[];
 
@@ -271,6 +273,7 @@ class DominoLobbyHost {
               'reason': state.result!.reason.name,
             },
     };
+    _lastGameSnapshot = snapshot;
     _server.broadcast(<String, Object?>{
       'v': 1,
       'type': 'game_state',
