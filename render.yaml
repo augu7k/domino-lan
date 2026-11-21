@@ -12,7 +12,7 @@ services:
       - key: NODE_VERSION
         value: 22
 
-  - type: static
+  - type: static_site
     name: domino-lan-web
     rootDir: web
     buildCommand: echo "Publishing Domino PWA"
