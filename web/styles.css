@@ -65,3 +65,11 @@ input:focus{border-color:var(--felt);box-shadow:0 0 0 3px #174e3a16}
 .game-message{font-size:12px;color:var(--muted);margin:8px 0}
 .round-result{margin-top:12px;padding:13px;border-radius:12px;background:#f2f5f2;color:var(--felt);font-size:13px;font-weight:bold;text-align:center}
 @media(max-width:520px){.connection-card,.panel{padding:15px}.action-grid{grid-template-columns:1fr}.join-controls input{flex:1;width:60px}.players-list{grid-template-columns:1fr 1fr}.game-heading{align-items:flex-start;flex-direction:column}.scores{width:100%}.domino-tile{width:58px;height:42px}.hand-tile{width:68px;height:54px}}
+
+.round-history{margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
+.round-history h3{font-size:14px;margin:0 0 9px;color:var(--felt)}
+.history-row{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-top:7px;font-size:12px}
+.history-row strong{color:var(--felt)}
+.history-row span{text-align:left;font-weight:bold}
+.history-row small{grid-column:1/-1;color:var(--muted);font-size:10px}
+.history-empty{margin:0;color:var(--muted);font-size:11px}
