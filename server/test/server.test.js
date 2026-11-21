@@ -373,6 +373,7 @@ test("round history records each result and carries it into the next round", () 
     reason: "player_emptied_hand",
     winningTeam: 0,
     pointsAwarded: 11,
+    teamRemainingPips: [2, 11],
     teamScores: [11, 0],
   }]);
   const next = createRound(
