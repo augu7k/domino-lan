@@ -37,7 +37,11 @@ export function createRound(players, teamScores = [0, 0], roundNumber = 1, round
     consecutivePasses: 0,
     teamScores: [...teamScores],
     roundNumber,
-    roundHistory: roundHistory.map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
+    roundHistory: roundHistory.map((entry) => ({
+      ...entry,
+      teamScores: [...entry.teamScores],
+      teamRemainingPips: [...(entry.teamRemainingPips ?? [0, 0])],
+    })),
     isFinished: false,
     result: null,
   };
@@ -67,7 +71,11 @@ export function publicGameState(room) {
     consecutivePasses: game.consecutivePasses,
     teamScores: [...game.teamScores],
     roundNumber: game.roundNumber,
-    roundHistory: (game.roundHistory ?? []).map((entry) => ({ ...entry, teamScores: [...entry.teamScores] })),
+    roundHistory: (game.roundHistory ?? []).map((entry) => ({
+      ...entry,
+      teamScores: [...entry.teamScores],
+      teamRemainingPips: [...(entry.teamRemainingPips ?? [0, 0])],
+    })),
     remainingTiles: game.hands.map((hand) => hand.length),
     isFinished: game.isFinished,
     result: game.result ? { ...game.result } : null,
@@ -93,6 +101,7 @@ function finishRound(room, winningTeam, reason) {
     reason,
     winningTeam,
     pointsAwarded,
+    teamRemainingPips: [...remaining],
     teamScores: [...game.teamScores],
   });
 }
