@@ -132,3 +132,27 @@ jobs:
           path: build/ios/iphonesimulator/Runner.app
           if-no-files-found: error
           retention-days: 14
+
+  web:
+    name: Web PWA build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate PWA files
+        run: |
+          test -s web/index.html
+          test -s web/app.js
+          test -s web/styles.css
+          test -s web/manifest.webmanifest
+          test -s web/sw.js
+          python -m json.tool web/manifest.webmanifest > /dev/null
+
+      - name: Upload web PWA
+        uses: actions/upload-artifact@v4
+        with:
+          name: domino-lan-web-pwa
+          path: web/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#174e3a">
+  <meta name="description" content="دومينو الشبكة - لعبة جماعية لأربعة لاعبين">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <title>دومينو الشبكة</title>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">▦</div>
+      <div><p class="eyebrow">أربعة لاعبين · فريقان</p><h1>دومينو الشبكة</h1></div>
+      <button id="installButton" class="install-button" hidden>تثبيت</button>
+    </header>
+    <section class="hero">
+      <div class="hero-chip">Double-Six · Classic</div>
+      <h2>اجمع فريقك وابدأ اللعب</h2>
+      <p>اختر طريقة الاتصال المناسبة لك. يمكنك فتح اللعبة من Android أو iPhone أو الكمبيوتر.</p>
+      <div class="tiles" aria-hidden="true"><span>6|6</span><span>5|2</span><span>4|1</span></div>
+    </section>
+    <section class="mode-section" aria-labelledby="modeTitle">
+      <h2 id="modeTitle">طريقة اللعب</h2>
+      <div class="mode-grid">
+        <article class="mode-card">
+          <div class="mode-icon">⌁</div>
+          <h3>عبر الإنترنت</h3>
+          <p>أنشئ غرفة والعب مع أصدقائك حتى لو كانوا في أماكن مختلفة.</p>
+          <span class="status status-progress">قيد التجهيز</span>
+          <button class="mode-button primary" id="onlineButton">اختيار اللعب عبر الإنترنت</button>
+        </article>
+        <article class="mode-card">
+          <div class="mode-icon">⌁</div>
+          <h3>نقطة اتصال / Wi-Fi</h3>
+          <p>العب مع الأجهزة الموجودة على الشبكة المحلية، حتى دون إنترنت.</p>
+          <span class="status status-progress">قيد التجهيز</span>
+          <button class="mode-button secondary" id="localButton">اختيار اللعب المحلي</button>
+        </article>
+      </div>
+    </section>
+    <section class="notice" id="modeNotice" role="status" aria-live="polite">
+      <strong>نسخة الويب التأسيسية</strong>
+      <p>تم تجهيز واجهة التطبيق وقابلية التثبيت. لم يتم تفعيل إنشاء الغرف أو الاتصال بالمباريات بعد.</p>
+    </section>
+    <footer>الإصدار التأسيسي للويب · 0.2.0</footer>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
