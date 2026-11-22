@@ -197,6 +197,26 @@ function renderGame() {
   $("#lobbyPanel").hidden = true;
   $("#roomPanel").hidden = true;
   $("#gamePanel").hidden = false;
+  const tablePlayers = $("#tablePlayers");
+  tablePlayers.replaceChildren();
+  const mySeat = Number.isInteger(player?.seat) ? player.seat : 0;
+  (game.players || []).forEach((entry, seat) => {
+    const relativeSeat = (seat - mySeat + 4) % 4;
+    const position = ["bottom", "left", "top", "right"][relativeSeat];
+    const card = document.createElement("div");
+    card.className = "table-player seat-" + position +
+      (seat === game.currentSeat ? " active" : "") +
+      (seat === mySeat ? " me" : "") +
+      (seat % 2 === mySeat % 2 ? " teammate" : " opponent");
+    const name = document.createElement("strong");
+    name.textContent = entry?.name || "المقعد " + (seat + 1);
+    const role = document.createElement("span");
+    role.textContent = seat === mySeat ? "أنت" : (seat % 2 === mySeat % 2 ? "زميلك" : "الفريق المنافس");
+    const turn = document.createElement("small");
+    turn.textContent = seat === game.currentSeat ? "يلعب الآن" : " ";
+    card.append(name, role, turn);
+    tablePlayers.append(card);
+  });
   const current = game.players[game.currentSeat];
   const isMyTurn = game.currentSeat === player?.seat;
   const hasLegalMove = yourHand.some(canPlayTile);
