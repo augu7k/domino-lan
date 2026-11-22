@@ -90,3 +90,22 @@ input:focus{border-color:var(--felt);box-shadow:0 0 0 3px #174e3a16}
 .room-share-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.room-share-actions .small-button{white-space:nowrap}@media(max-width:380px){.room-heading{align-items:flex-start;flex-direction:column}.room-share-actions{width:100%;justify-content:stretch}.room-share-actions button{flex:1}}
 
 .qr-panel{text-align:center}.qr-panel .room-heading{margin-bottom:12px}.qr-panel .room-heading h2{margin:0}.qr-code{display:flex;justify-content:center;align-items:center;min-height:230px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px}.qr-code img,.qr-code canvas{max-width:100%;height:auto!important}.qr-panel .hint{max-width:440px;margin:10px auto 0}
+
+.table-players{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;gap:8px;align-items:center;margin:14px 0 10px;padding:12px;border-radius:18px;background:linear-gradient(145deg,#1d6048,#123d2d);min-height:188px;position:relative;overflow:hidden}
+.table-players:before{content:"";grid-column:2;grid-row:2;border:1px dashed #ffffff55;border-radius:50%;width:72px;height:72px;justify-self:center;align-self:center}
+.table-player{z-index:1;display:flex;flex-direction:column;gap:3px;min-width:0;max-width:150px;padding:8px 10px;border:1px solid #ffffff35;border-radius:11px;background:#ffffffed;color:var(--ink);box-shadow:0 3px 10px #0002}
+.table-player strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-player span,.table-player small{font-size:9px;color:var(--muted)}
+.table-player small{min-height:11px}
+.table-player.active{outline:3px solid var(--gold);background:#fff8e8}
+.table-player.me{border-color:var(--gold)}
+.table-player.teammate span{color:#267348}
+.table-player.opponent span{color:#8a6034}
+.seat-top{grid-column:2;grid-row:1;justify-self:center}
+.seat-bottom{grid-column:2;grid-row:3;justify-self:center}
+.seat-left{grid-column:1;grid-row:2;justify-self:start}
+.seat-right{grid-column:3;grid-row:2;justify-self:end}
+.board-wrap{border:1px solid var(--line);border-radius:15px;padding:9px;background:#edf3ef}
+.board-caption{font-size:10px;font-weight:bold;color:var(--muted);margin:0 4px 5px}
+.board{margin:0;background:#e4ece6;min-height:92px}
+@media(max-width:380px){.table-players{min-height:172px;padding:8px;gap:5px}.table-player{padding:7px 6px;max-width:105px}.table-player strong{font-size:10px}.table-player span,.table-player small{font-size:8px}.table-players:before{width:56px;height:56px}}
