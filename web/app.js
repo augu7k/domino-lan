@@ -10,7 +10,11 @@ let player = null;
 let game = null;
 let yourHand = [];
 let selectedTile = null;
-let serverEndpoint = localStorage.getItem("domino.serverUrl") || "";
+const DEFAULT_SERVER = "https://domino-lan-server.onrender.com";
+let serverEndpoint = localStorage.getItem("domino.serverUrl") || DEFAULT_SERVER;
+let reconnectTimer = null;
+let reconnectDelay = 1500;
+let reconnectEnabled = false;
 let savedSession = null;
 try { savedSession = JSON.parse(localStorage.getItem("domino.session") || "null"); } catch {}
 $("#serverUrl").value = serverEndpoint;
@@ -47,7 +51,7 @@ function send(type, payload = {}) {
   }
   socket.send(JSON.stringify({ v: 1, type, payload }));
 }
-function connect() {
+function connect(isRetry = false) {
   const value = $("#serverUrl").value.trim();
   if (!value) return showNotice("عنوان الخادم مطلوب", "أدخل رابط الخادم الذي تم نشره.");
   let url;
@@ -70,7 +74,7 @@ function connect() {
     try { message = JSON.parse(event.data); } catch { return; }
     handleMessage(message);
   });
-  socket.addEventListener("close", () => setConnected(false, "انقطع الاتصال"));
+  socket.addEventListener("close", () => {\n    setConnected(false, "انقطع الاتصال");\n    if (reconnectEnabled && serverEndpoint) {\n      showNotice("انقطع الاتصال", "سيحاول التطبيق الاتصال تلقائياً. إذا كنت داخل غرفة فسيحاول استعادة مقعدك.");\n      reconnectTimer = setTimeout(() => {\n        reconnectDelay = Math.min(reconnectDelay * 1.6, 30000);\n        connect(true);\n      }, reconnectDelay);\n    }\n  });
   socket.addEventListener("error", () => showNotice("تعذر الاتصال", "تحقق من رابط الخادم ومن نشر الخدمة."));
 }
 function handleMessage(message) {
@@ -325,7 +329,7 @@ function chooseTile(tile) {
   }
   renderGame();
 }
-$("#connectButton").addEventListener("click", connect);
+$("#connectButton").addEventListener("click", () => connect());\nwindow.addEventListener("load", () => {\n  showNotice("جاهز للاتصال", "تم إعداد رابط الخادم تلقائياً. يمكنك إنشاء غرفة أو الانضمام بعد الاتصال.");\n  connect();\n});
 $("#createButton").addEventListener("click", () => {
   const name = $("#playerName").value.trim();
   if (!name) return showNotice("اسم اللاعب مطلوب", "اكتب اسمك قبل إنشاء الغرفة.");
