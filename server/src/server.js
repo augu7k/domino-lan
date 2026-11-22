@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+import { createServer } from "node:http";\nimport { readFile } from "node:fs/promises";\nimport { resolve, extname } from "node:path";
 import { randomInt, randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
 import { createRound, playTile, passTurn, publicGameState } from "./game-engine.js";
@@ -217,7 +217,34 @@ function handleMessage(socket, raw) {
     default: return reject(socket, "UNKNOWN_MESSAGE", "نوع الرسالة غير مدعوم.", message.requestId);
   }
 }
-const httpServer = createServer((request, response) => {
+const WEB_ROOT = resolve(process.cwd(), "../web");
+const MIME_TYPES = {
+  ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8", ".svg": "image/svg+xml",
+  ".png": "image/png", ".ico": "image/x-icon"
+};
+const httpServer = createServer(async (request, response) => {
+  const pathname = new URL(request.url || "/", "http://localhost").pathname;
+  if (pathname === "/health") {
+    response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    response.end(JSON.stringify({ ok: true, service: "domino-lan", protocolVersion: 1, activeRooms: rooms.size }));
+    return;
+  }
+  const relative = pathname === "/" ? "index.html" : pathname.replace(/^\\/+/, "");
+  const filePath = resolve(WEB_ROOT, relative);
+  if (!filePath.startsWith(WEB_ROOT + "/") && filePath !== WEB_ROOT) {
+    response.writeHead(403); response.end("forbidden"); return;
+  }
+  try {
+    const data = await readFile(filePath);
+    response.writeHead(200, { "content-type": MIME_TYPES[extname(filePath)] || "application/octet-stream", "cache-control": pathname === "/" || pathname.endsWith(".html") ? "no-cache" : "public, max-age=3600" });
+    response.end(data);
+  } catch {
+    response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    response.end("not_found");
+  }
+});
   if (request.url === "/health" || request.url === "/") {
     response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
     response.end(JSON.stringify({ ok: true, service: "domino-lan", protocolVersion: 1, activeRooms: rooms.size }));
