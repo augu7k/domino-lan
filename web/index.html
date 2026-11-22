@@ -52,7 +52,7 @@
     <section id="roomPanel" class="panel" hidden>
       <div class="room-heading">
         <div><p class="eyebrow">رمز الغرفة</p><strong id="roomCodeLabel" class="room-code">------</strong></div>
-        <div class="room-share-actions"><button id="copyCodeButton" class="small-button">نسخ الرمز</button><button id="shareRoomButton" class="small-button">مشاركة الغرفة</button></div>
+        <div class="room-share-actions"><button id="copyCodeButton" class="small-button">نسخ الرمز</button><button id="shareRoomButton" class="small-button">مشاركة الغرفة</button><button id="showQrButton" class="small-button">رمز QR</button></div>
       </div>
       <h2>اللاعبون</h2>
       <div id="playersList" class="players-list"></div>
@@ -60,6 +60,13 @@
         <button id="readyButton" class="mode-button secondary" disabled>أنا جاهز</button>
         <button id="startButton" class="mode-button primary" hidden disabled>ابدأ المباراة</button>
       </div>
+    </section>
+
+    <section id="qrPanel" class="panel qr-panel" hidden aria-live="polite">
+      <div class="room-heading"><h2>امسح الرمز للانضمام</h2><button id="closeQrButton" class="small-button">إغلاق</button></div>
+      <div id="roomQrCode" class="qr-code"></div>
+      <p class="hint">افتح كاميرا الهاتف الآخر ووجّهها نحو الرمز. سيُفتح رابط الغرفة ويُملأ رمزها تلقائياً.</p>
+      <p id="qrFallback" class="hint" hidden>تعذر إنشاء الرمز حالياً. استخدم زر مشاركة الغرفة أو انسخ الرابط.</p>
     </section>
 
     <section id="gamePanel" class="panel" hidden>
@@ -88,6 +95,7 @@
     </section>
     <footer>دومينو الشبكة · إصدار الويب</footer>
   </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
   <script src="./app.js" defer></script>
 </body>
 </html>
