@@ -240,7 +240,11 @@ const httpServer = createServer(async (request, response) => {
   }
   try {
     const data = await readFile(filePath);
-    response.writeHead(200, { "content-type": MIME_TYPES[extname(filePath)] || "application/octet-stream", "cache-control": pathname === "/" || pathname.endsWith(".html") ? "no-cache" : "public, max-age=3600" });
+    const assetExtension = extname(filePath).toLowerCase();
+    const cacheControl = pathname === "/" || assetExtension === ".html" || assetExtension === ".js" || pathname.endsWith("/sw.js")
+      ? "no-cache, no-store, must-revalidate"
+      : "public, max-age=3600";
+    response.writeHead(200, { "content-type": MIME_TYPES[assetExtension] || "application/octet-stream", "cache-control": cacheControl });
     response.end(data);
   } catch {
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
