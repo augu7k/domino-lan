@@ -1,4 +1,6 @@
-import { createServer } from "node:http";\nimport { readFile } from "node:fs/promises";\nimport { resolve, extname } from "node:path";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { resolve, extname } from "node:path";
 import { randomInt, randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
 import { createRound, playTile, passTurn, publicGameState } from "./game-engine.js";
@@ -231,7 +233,7 @@ const httpServer = createServer(async (request, response) => {
     response.end(JSON.stringify({ ok: true, service: "domino-lan", protocolVersion: 1, activeRooms: rooms.size }));
     return;
   }
-  const relative = pathname === "/" ? "index.html" : pathname.replace(/^\\/+/, "");
+  const relative = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const filePath = resolve(WEB_ROOT, relative);
   if (!filePath.startsWith(WEB_ROOT + "/") && filePath !== WEB_ROOT) {
     response.writeHead(403); response.end("forbidden"); return;
