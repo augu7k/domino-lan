@@ -64,9 +64,20 @@ function connect(isRetry = false) {
   serverEndpoint = value;
   localStorage.setItem("domino.serverUrl", value);
   setConnected(false, "جارٍ الاتصال…");
+  let opened = false;
+  let connectionTimer = null;
   const connection = new WebSocket(url);
   socket = connection;
+  connectionTimer = setTimeout(() => {
+    if (socket === connection && connection.readyState !== WebSocket.OPEN) {
+      showNotice("انتهت مهلة الاتصال", "لم يستجب الخادم خلال 20 ثانية. قد تكون خدمة Render متوقفة أو لم يكتمل نشرها. سيعيد التطبيق المحاولة تلقائياً.");
+      connection.close();
+    }
+  }, 20000);
   connection.addEventListener("open", () => {
+    opened = true;
+    clearTimeout(connectionTimer);
+    reconnectDelay = 1500;
     setConnected(true);
     showNotice("تم الاتصال", "يمكنك إنشاء غرفة أو الانضمام إلى غرفة موجودة.");
     if (savedSession?.server === serverEndpoint && savedSession.roomCode && savedSession.resumeToken) {
@@ -78,11 +89,15 @@ function connect(isRetry = false) {
     try { message = JSON.parse(event.data); } catch { return; }
     handleMessage(message);
   });
-  connection.addEventListener("close", () => {
+  connection.addEventListener("close", (event) => {
+    clearTimeout(connectionTimer);
     if (socket !== connection) return;
     setConnected(false, "انقطع الاتصال");
+    const detail = opened
+      ? "انقطع اتصال WebSocket (الرمز " + event.code + "). سيحاول التطبيق الاتصال مجدداً."
+      : "لم يكتمل فتح اتصال WebSocket (الرمز " + event.code + "). تحقق من نشر خدمة الخادم ومسار /ws. سيحاول التطبيق الاتصال مجدداً.";
+    showNotice("تعذر استمرار الاتصال", detail);
     if (reconnectEnabled && serverEndpoint) {
-      showNotice("انقطع الاتصال", "سيحاول التطبيق الاتصال تلقائياً. إذا كنت داخل غرفة فسيحاول استعادة مقعدك.");
       reconnectTimer = setTimeout(() => {
         reconnectDelay = Math.min(reconnectDelay * 1.6, 30000);
         connect(true);
@@ -90,7 +105,7 @@ function connect(isRetry = false) {
     }
   });
   connection.addEventListener("error", () => {
-    if (socket === connection) showNotice("تعذر الاتصال", "تحقق من رابط الخادم ومن نشر الخدمة.");
+    if (socket === connection) showNotice("فشل اتصال WebSocket", "تعذر الوصول إلى " + url + ". تأكد أن خدمة domino-lan-server منشورة وتعمل على Render.");
   });
 }
 function handleMessage(message) {
