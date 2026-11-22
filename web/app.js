@@ -92,10 +92,10 @@ function connect(isRetry = false) {
   connection.addEventListener("close", (event) => {
     clearTimeout(connectionTimer);
     if (socket !== connection) return;
-    setConnected(false, "انقطع الاتصال");
+    setConnected(false, "انقطع الاتصال · " + event.code);
     const detail = opened
       ? "انقطع اتصال WebSocket (الرمز " + event.code + "). سيحاول التطبيق الاتصال مجدداً."
-      : "لم يكتمل فتح اتصال WebSocket (الرمز " + event.code + "). تحقق من نشر خدمة الخادم ومسار /ws. سيحاول التطبيق الاتصال مجدداً.";
+      : "لم يكتمل فتح اتصال WebSocket (الرمز " + event.code + ") على العنوان " + url + ". تحقق من نشر خدمة الخادم ومسار /ws. سيحاول التطبيق الاتصال مجدداً." ;
     showNotice("تعذر استمرار الاتصال", detail);
     if (reconnectEnabled && serverEndpoint) {
       reconnectTimer = setTimeout(() => {
