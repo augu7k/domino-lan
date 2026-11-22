@@ -212,9 +212,12 @@ function renderGame() {
     name.textContent = entry?.name || "المقعد " + (seat + 1);
     const role = document.createElement("span");
     role.textContent = seat === mySeat ? "أنت" : (seat % 2 === mySeat % 2 ? "زميلك" : "الفريق المنافس");
+    const count = document.createElement("span");
+    const remaining = game.remainingTiles?.[seat];
+    count.textContent = Number.isInteger(remaining) ? "الأحجار المتبقية: " + remaining : (entry?.connected === false ? "غير متصل" : "متصل");
     const turn = document.createElement("small");
-    turn.textContent = seat === game.currentSeat ? "يلعب الآن" : " ";
-    card.append(name, role, turn);
+    turn.textContent = seat === game.currentSeat ? "دوره الآن" : " ";
+    card.append(name, role, count, turn);
     tablePlayers.append(card);
   });
   const current = game.players[game.currentSeat];
