@@ -88,3 +88,5 @@ input:focus{border-color:var(--felt);box-shadow:0 0 0 3px #174e3a16}
 @media(max-width:360px){.result-breakdown{grid-template-columns:1fr}}
 
 .room-share-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.room-share-actions .small-button{white-space:nowrap}@media(max-width:380px){.room-heading{align-items:flex-start;flex-direction:column}.room-share-actions{width:100%;justify-content:stretch}.room-share-actions button{flex:1}}
+
+.qr-panel{text-align:center}.qr-panel .room-heading{margin-bottom:12px}.qr-panel .room-heading h2{margin:0}.qr-code{display:flex;justify-content:center;align-items:center;min-height:230px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px}.qr-code img,.qr-code canvas{max-width:100%;height:auto!important}.qr-panel .hint{max-width:440px;margin:10px auto 0}
