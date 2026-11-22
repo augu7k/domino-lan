@@ -278,5 +278,5 @@ const cleanup = setInterval(() => {
   }
 }, 60_000);
 cleanup.unref();
-httpServer.listen(PORT, "0.0.0.0", () => console.log(`Domino server listening on :${PORT}`));
+httpServer.listen(PORT, "0.0.0.0", () => console.log(`Domino server listening on :${PORT} (build 2026-11-23-cache-refresh)`));
 export { httpServer, rooms };
