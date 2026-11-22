@@ -245,14 +245,7 @@ const httpServer = createServer(async (request, response) => {
     response.end("not_found");
   }
 });
-  if (request.url === "/health" || request.url === "/") {
-    response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-    response.end(JSON.stringify({ ok: true, service: "domino-lan", protocolVersion: 1, activeRooms: rooms.size }));
-    return;
-  }
-  response.writeHead(404, { "content-type": "application/json; charset=utf-8" });
-  response.end(JSON.stringify({ error: "not_found" }));
-});
+
 const wss = new WebSocketServer({ server: httpServer, path: "/ws", maxPayload: 16 * 1024, perMessageDeflate: false });
 wss.on("connection", (socket) => {
   socket.on("message", (raw) => handleMessage(socket, raw));
