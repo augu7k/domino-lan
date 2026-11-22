@@ -372,7 +372,8 @@ $("#startButton").addEventListener("click", () => send("start_game"));
 $("#passButton").addEventListener("click", () => send("pass_turn"));
 $("#nextRoundButton").addEventListener("click", () => send("next_round"));
 function roomInviteUrl() {
-  const inviteUrl = new URL(roomInviteUrl());
+  const inviteUrl = new URL(location.href);
+  inviteUrl.searchParams.set("room", room.roomCode);
   return inviteUrl.toString();
 }
 $("#showQrButton").addEventListener("click", () => {
