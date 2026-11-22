@@ -253,7 +253,8 @@ const httpServer = createServer(async (request, response) => {
 });
 
 const wss = new WebSocketServer({ server: httpServer, path: "/ws", maxPayload: 16 * 1024, perMessageDeflate: false });
-wss.on("connection", (socket) => {
+wss.on("connection", (socket, request) => {
+  console.log("WebSocket client connected:", request.url || "/ws");
   socket.on("message", (raw) => handleMessage(socket, raw));
   socket.on("close", () => {
     const session = sockets.get(socket);
