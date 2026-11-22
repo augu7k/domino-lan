@@ -19,6 +19,8 @@ let savedSession = null;
 try { savedSession = JSON.parse(localStorage.getItem("domino.session") || "null"); } catch {}
 $("#serverUrl").value = serverEndpoint;
 $("#playerName").value = localStorage.getItem("domino.playerName") || "";
+const invitedRoomCode = new URLSearchParams(location.search).get("room");
+if (invitedRoomCode && /^\d{6}$/.test(invitedRoomCode)) $("#roomCode").value = invitedRoomCode;
 
 function showNotice(title, message) {
   notice.replaceChildren();
@@ -369,6 +371,18 @@ $("#readyButton").addEventListener("click", () => {
 $("#startButton").addEventListener("click", () => send("start_game"));
 $("#passButton").addEventListener("click", () => send("pass_turn"));
 $("#nextRoundButton").addEventListener("click", () => send("next_round"));
+$("#shareRoomButton").addEventListener("click", async () => {
+  if (!room?.roomCode) return;
+  const inviteUrl = new URL(location.href);
+  inviteUrl.searchParams.set("room", room.roomCode);
+  const shareData = { title: "دعوة إلى لعبة الدومينو", text: "انضم إلى غرفة الدومينو باستخدام هذا الرابط أو الرمز: " + room.roomCode, url: inviteUrl.toString() };
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else { await navigator.clipboard.writeText(inviteUrl.toString()); showNotice("تم نسخ رابط الدعوة", "أرسل الرابط إلى أصدقائك للانضمام مباشرة."); }
+  } catch (error) {
+    if (error.name !== "AbortError") showNotice("رابط دعوة الغرفة", inviteUrl.toString());
+  }
+});
 $("#copyCodeButton").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(room.roomCode); showNotice("تم النسخ", "تم نسخ رمز الغرفة."); }
   catch { showNotice("رمز الغرفة", room.roomCode); }
