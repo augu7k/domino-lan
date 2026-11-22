@@ -371,6 +371,29 @@ $("#readyButton").addEventListener("click", () => {
 $("#startButton").addEventListener("click", () => send("start_game"));
 $("#passButton").addEventListener("click", () => send("pass_turn"));
 $("#nextRoundButton").addEventListener("click", () => send("next_round"));
+function roomInviteUrl() {
+  const inviteUrl = new URL(roomInviteUrl());
+  return inviteUrl.toString();
+}
+$("#showQrButton").addEventListener("click", () => {
+  if (!room?.roomCode) return;
+  const panel = $("#qrPanel");
+  const target = $("#roomQrCode");
+  const fallback = $("#qrFallback");
+  target.replaceChildren();
+  fallback.hidden = true;
+  panel.hidden = false;
+  if (typeof QRCode === "undefined") {
+    fallback.hidden = false;
+    return;
+  }
+  try {
+    new QRCode(target, { text: roomInviteUrl(), width: 220, height: 220, colorDark: "#17251d", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  } catch {
+    fallback.hidden = false;
+  }
+});
+$("#closeQrButton").addEventListener("click", () => { $("#qrPanel").hidden = true; });
 $("#shareRoomButton").addEventListener("click", async () => {
   if (!room?.roomCode) return;
   const inviteUrl = new URL(location.href);
