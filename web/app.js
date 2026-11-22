@@ -42,7 +42,9 @@ function endpointToWebSocket(value) {
   if (url.protocol === "https:") url.protocol = "wss:";
   else if (url.protocol === "http:") url.protocol = "ws:";
   if (url.protocol !== "wss:" && url.protocol !== "ws:") throw new Error("استخدم رابط https أو http أو ws أو wss.");
-  url.pathname = url.pathname.replace(/\/$/, "");
+  // Normalize repeated and trailing slashes before adding the WebSocket route.
+  // This also repairs previously saved server URLs such as https://host.example//.
+  url.pathname = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "");
   if (!url.pathname.endsWith("/ws")) url.pathname += "/ws";
   return url.toString();
 }
