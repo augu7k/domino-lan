@@ -14,7 +14,7 @@ const DEFAULT_SERVER = "https://domino-lan-server.onrender.com";
 let serverEndpoint = localStorage.getItem("domino.serverUrl") || DEFAULT_SERVER;
 let reconnectTimer = null;
 let reconnectDelay = 1500;
-let reconnectEnabled = false;
+let reconnectEnabled = true;
 let savedSession = null;
 try { savedSession = JSON.parse(localStorage.getItem("domino.session") || "null"); } catch {}
 $("#serverUrl").value = serverEndpoint;
@@ -57,25 +57,39 @@ function connect(isRetry = false) {
   let url;
   try { url = endpointToWebSocket(value); }
   catch (error) { return showNotice("رابط غير صحيح", error.message); }
+  if (reconnectTimer) clearTimeout(reconnectTimer);
   if (socket) socket.close();
   serverEndpoint = value;
   localStorage.setItem("domino.serverUrl", value);
   setConnected(false, "جارٍ الاتصال…");
-  socket = new WebSocket(url);
-  socket.addEventListener("open", () => {
+  const connection = new WebSocket(url);
+  socket = connection;
+  connection.addEventListener("open", () => {
     setConnected(true);
     showNotice("تم الاتصال", "يمكنك إنشاء غرفة أو الانضمام إلى غرفة موجودة.");
     if (savedSession?.server === serverEndpoint && savedSession.roomCode && savedSession.resumeToken) {
       send("reconnect", { roomCode: savedSession.roomCode, resumeToken: savedSession.resumeToken });
     }
   });
-  socket.addEventListener("message", (event) => {
+  connection.addEventListener("message", (event) => {
     let message;
     try { message = JSON.parse(event.data); } catch { return; }
     handleMessage(message);
   });
-  socket.addEventListener("close", () => {\n    setConnected(false, "انقطع الاتصال");\n    if (reconnectEnabled && serverEndpoint) {\n      showNotice("انقطع الاتصال", "سيحاول التطبيق الاتصال تلقائياً. إذا كنت داخل غرفة فسيحاول استعادة مقعدك.");\n      reconnectTimer = setTimeout(() => {\n        reconnectDelay = Math.min(reconnectDelay * 1.6, 30000);\n        connect(true);\n      }, reconnectDelay);\n    }\n  });
-  socket.addEventListener("error", () => showNotice("تعذر الاتصال", "تحقق من رابط الخادم ومن نشر الخدمة."));
+  connection.addEventListener("close", () => {
+    if (socket !== connection) return;
+    setConnected(false, "انقطع الاتصال");
+    if (reconnectEnabled && serverEndpoint) {
+      showNotice("انقطع الاتصال", "سيحاول التطبيق الاتصال تلقائياً. إذا كنت داخل غرفة فسيحاول استعادة مقعدك.");
+      reconnectTimer = setTimeout(() => {
+        reconnectDelay = Math.min(reconnectDelay * 1.6, 30000);
+        connect(true);
+      }, reconnectDelay);
+    }
+  });
+  connection.addEventListener("error", () => {
+    if (socket === connection) showNotice("تعذر الاتصال", "تحقق من رابط الخادم ومن نشر الخدمة.");
+  });
 }
 function handleMessage(message) {
   const p = message.payload || {};
@@ -329,7 +343,11 @@ function chooseTile(tile) {
   }
   renderGame();
 }
-$("#connectButton").addEventListener("click", () => connect());\nwindow.addEventListener("load", () => {\n  showNotice("جاهز للاتصال", "تم إعداد رابط الخادم تلقائياً. يمكنك إنشاء غرفة أو الانضمام بعد الاتصال.");\n  connect();\n});
+$("#connectButton").addEventListener("click", () => connect());
+window.addEventListener("load", () => {
+  showNotice("جاهز للاتصال", "تم إعداد رابط الخادم تلقائياً. يمكنك إنشاء غرفة أو الانضمام بعد الاتصال.");
+  connect();
+});
 $("#createButton").addEventListener("click", () => {
   const name = $("#playerName").value.trim();
   if (!name) return showNotice("اسم اللاعب مطلوب", "اكتب اسمك قبل إنشاء الغرفة.");
